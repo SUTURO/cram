@@ -637,7 +637,8 @@ When you are ready poke the white part of my hand." talk)
  (let* ((talkery talk-string))
   (when current-knowledge-object
     (setf talkery (concatenate 'string talk-string  (trim-knowledge-string current-knowledge-object))))
-  (when talk (call-text-to-speech-action talkery))))
+   (when talk (call-text-to-speech-action talkery)
+         (vizbox-robot-says talkery))))
 
 (defun trim-knowledge-string (current-knowledge-object)
   "trims the knowledge name, when it is with http"

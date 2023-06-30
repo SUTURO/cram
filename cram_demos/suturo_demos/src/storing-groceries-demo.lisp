@@ -68,6 +68,7 @@
            (with-knowledge-result (result)
                `(and ("has_urdf_name" object ,shelf)
                      ("object_rel_pose" object "perceive" result))
+             (vizbox-set-step 0) ;; Vizbox
              (move-hsr (make-pose-stamped-from-knowledge-result result)))
            
            (print "Performing sequence, door will be opened.")
@@ -83,6 +84,8 @@
                  ((equal use-localization T)
 
                   (print "Opening the door with the tf-frame of the handle.")
+
+                  (vizbox-set-step 1) ;; Vizbox
      
                   (let* ((?collision-mode collision-mode)
                          (?handle-link-left handle-link-left)
@@ -154,8 +157,10 @@
          (with-knowledge-result (result)
              `(and ("has_urdf_name" object ,shelf)
                    ("object_rel_pose" object "perceive" result))
+           (vizbox-set-step 0) ;; Vizbox
            (move-hsr (make-pose-stamped-from-knowledge-result result)))
-         
+
+         (vizbox-set-step 2) ;; Vizbox
          (perc-robot)
 
          (talk-request "I will now perceive the contents of the shelf!" talk)
@@ -166,7 +171,8 @@
                                           (type detecting)
                                           (object ?source-object-desig-shelf)))))
 
-    
+
+           (vizbox-set-step 3) ;; Vizbox
            (park-robot)
            
            
@@ -179,6 +185,7 @@
     (with-knowledge-result (result)
         `(and ("has_urdf_name" object ,table)
               ("object_rel_pose" object "perceive" result))
+      (vizbox-set-step 4) ;; Vizbox
       (move-hsr (make-pose-stamped-from-knowledge-result result)))
 
     (perc-robot)
@@ -191,6 +198,7 @@
              (exe:perform (desig:all action
                                      (type detecting)
                                      (object ?source-object-desig)))))
+    (vizbox-set-step 5) ;; Vizbox
         
 
 ;;=======================================MAIN=LOOP========================================================================
@@ -217,6 +225,7 @@
             ;;(talk-request "I will now Pick up: " talk :current-knowledge-object ?next-object)
 
             ;;Pick up the object.
+            (vizbox-set-step 6) ;; Vizbox
             (exe:perform (desig:an action
                                    (type :picking-up)
                                    (goal-pose ?next-pick-up-pose)
@@ -231,11 +240,13 @@
             (with-knowledge-result (result)
                 `(and ("has_urdf_name" object ,shelf)
                       ("object_rel_pose" object "perceive" result))
+              (vizbox-set-step 7) ;; Vizbox
               (move-hsr (make-pose-stamped-from-knowledge-result result)))
 
             ;;(talk-request "I will now place: " talk :current-knowledge-object ?current-object)
             
             ;;Places the object currently held.
+            (vizbox-set-step 8) ;; Vizbox
             (exe:perform (desig:an action
                                    (type :placing)
                                    (goal-pose ?next-place-pose)
@@ -261,6 +272,8 @@
                       ("object_rel_pose" object "perceive" result))
               (move-hsr (make-pose-stamped-from-knowledge-result result)))
             (print "Loop finished."))))
+
+        (vizbox-set-step 9) ;; Vizbox
 
         (print "Demo finished."))))
 

@@ -24,6 +24,8 @@
                  msg
                (setf (cpl::value hsr-pose-fluent) ?pose))))
 
+      (vizbox-set-step 0) ;; Vizbox
+
       (roslisp:subscribe "/hsrb/base_pose"
                          "geometry_msgs/PoseStamped"
                          #'hsrpose)
@@ -31,7 +33,6 @@
                          "geometry_msgs/PointStamped"
                          #'humanpose)
       (roslisp:subscribe "robokudovanessa/query/result"
-
                          "robokudo_msgs/QueryActionResult"
                          #'perceptresult)
 
@@ -52,15 +53,18 @@
                  (talk-request "Please step in front of me so I can recognize you" talk)
                  (sleep 1.5))
         
-       
+      (vizbox-set-step 1) ;; Vizbox
+      
       (talk-request "I was able to recognize you" talk)
       (when is-start
+        (vizbox-set-step 2) ;; Vizbox
         (talk-request "Can you please give me the bag?" talk)
                                         ;(call-take-pose-action 0 0 -0.65 0 -0.43 0 -1.17 -1.62)
                                         ;(human-assist talk))
         
         )
-        
+
+      (vizbox-set-step 3) ;; Vizbox
       (talk-request "I will now follow you, please dont move to fast." talk)
       (talk-request "When we arrived, please shake my hand!" talk)
         (let ((stop-condition t)
@@ -72,7 +76,8 @@
             (cpl::seq
               
 
-              (monitoring-mega-function)         
+              (monitoring-mega-function)
+              (vizbox-set-step 4) ;; Vizbox
               (talk-request "I think we arrived I hope my service was satisfactory!" talk)
               ;; (exe:perform (desig:a motion
               ;;                       (type gripper-motion)
@@ -92,11 +97,13 @@
           
           (unless stop-condition
             (cml-demo :is-start nil))
+          (vizbox-set-step 5) ;; Vizbox
           (talk-request "I would now drive back but philipp you have homework to do!" talk)
           (exe:perform (desig:a motion
                                 (type cml)
                                 (drive-back t)
-                                (laser-distance-threshold 0.5)))))))
+                                (laser-distance-threshold 0.5)))))
+          (vizbox-set-step 6))) ;; Vizbox
                                         ;(call-nav-action-ps home-pose)))))
 
 
