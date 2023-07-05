@@ -16,7 +16,7 @@
 (defun storing-groceries-demo (&key (max-objects 5) skip-open-shelf (skip-shelf-perception NIL) (joint-angle 0.4) (use-localization T) (what-door :both) (neatly NIL) (collision-mode :allow-all) (talk T) (?sequence-goals nil))
 
   ;;Shelf, table, handle-link-left and handle-link-right have to be set or checked in a new arena!
-  (let* ((shelf "shelf:shelf:shelf_base_center")
+  (let* ((shelf "open_shelf:shelf:shelf_base_center") ;;"shelf:shelf:shelf_base_center")
          (table "left_table:table:table_front_edge_center")
          (handle-link-left "iai_kitchen/shelf:shelf:shelf_door_left:handle")
          (handle-link-right "iai_kitchen/shelf:shelf:shelf_door_right:handle")
@@ -29,17 +29,17 @@
     ;;shelf:shelf:shelf_base_center
 
 
-  ;;    (setf (btr:joint-state (btr:get-environment-object)
-  ;;                        "cabinet1_door_top_left_joint")
-  ;;       0.0
-  ;;       (btr:joint-state (btr:get-environment-object)
-  ;;                        "cabinet7_door_bottom_left_joint")
-  ;;       0.025
-  ;;       (btr:joint-state (btr:get-environment-object)
-  ;;                        "dishwasher_drawer_middle_joint")
-  ;;       0.0)
-  ;; (btr-belief::publish-environment-joint-state
-  ;;  (btr:joint-states (btr:get-environment-object)))
+    ;;    (setf (btr:joint-state (btr:get-environment-object)
+    ;;                        "cabinet1_door_top_left_joint")
+    ;;       0.0
+    ;;       (btr:joint-state (btr:get-environment-object)
+    ;;                        "cabinet7_door_bottom_left_joint")
+    ;;       0.025
+    ;;       (btr:joint-state (btr:get-environment-object)
+    ;;                        "dishwasher_drawer_middle_joint")
+    ;;       0.0)
+    ;; (btr-belief::publish-environment-joint-state
+    ;;  (btr:joint-states (btr:get-environment-object)))
 
 
     
@@ -54,15 +54,15 @@
         `("init_storing_groceries")
       (print "Storing groceries plan started."))
 
-  
+    
     (park-robot)
 
     (talk-request "Hello I am Toya, i will now store the groceries!" talk)
     
-   
+    
     (cond ((equal skip-open-shelf NIL)
 
-            (talk-request "I will now move to the shelf to open it!" talk)
+           (talk-request "I will now move to the shelf to open it!" talk)
 
            ;;Move to the shelf to a perceive pose.
            (with-knowledge-result (result)
@@ -83,7 +83,7 @@
                  ((equal use-localization T)
 
                   (print "Opening the door with the tf-frame of the handle.")
-     
+                  
                   (let* ((?collision-mode collision-mode)
                          (?handle-link-left handle-link-left)
                          (?handle-link-right handle-link-right))
@@ -142,37 +142,37 @@
            (park-robot))
           ((equal skip-open-shelf T) 
            (print "Skipping sequence, shelf door wont be opened.")))
+    ;;(break)
     
-   
-  (cond ((equal skip-shelf-perception NIL)
-         ;;Perceive the contents of the shelf.
-         ;;Saves all possible objects.
-         ;;Objects are then created in Knowledge.
+    (cond ((equal skip-shelf-perception NIL)
+           ;;Perceive the contents of the shelf.
+           ;;Saves all possible objects.
+           ;;Objects are then created in Knowledge.
 
-         
-         ;;Move to the shelf.
-         (with-knowledge-result (result)
-             `(and ("has_urdf_name" object ,shelf)
-                   ("object_rel_pose" object "perceive" result))
-           (move-hsr (make-pose-stamped-from-knowledge-result result)))
-         
-         (perc-robot)
-
-         (talk-request "I will now perceive the contents of the shelf!" talk)
-         
-         (let* ((?source-object-desig-shelf all-designator)
-                (?object-desig-list-shelf
-                  (exe:perform (desig:all action
-                                          (type detecting)
-                                          (object ?source-object-desig-shelf)))))
-
-    
-           (park-robot)
            
+           ;;Move to the shelf.
+           (with-knowledge-result (result)
+               `(and ("has_urdf_name" object ,shelf)
+                     ("object_rel_pose" object "perceive" result))
+             (move-hsr (make-pose-stamped-from-knowledge-result result)))
            
-           (print ?object-desig-list-shelf)))
-        ((equal skip-shelf-perception T)
-         (print "Skipping sequence, shelf contents wont be perceived.")))
+           (perc-robot)
+
+           (talk-request "I will now perceive the contents of the shelf!" talk)
+           
+           (let* ((?source-object-desig-shelf all-designator)
+                  (?object-desig-list-shelf
+                    (exe:perform (desig:all action
+                                            (type detecting)
+                                            (object ?source-object-desig-shelf)))))
+
+             
+             (park-robot)
+             
+             
+             (print ?object-desig-list-shelf)))
+          ((equal skip-shelf-perception T)
+           (print "Skipping sequence, shelf contents wont be perceived.")))
 
 
     ;;Move to the table to a perceive pose.
@@ -191,12 +191,12 @@
              (exe:perform (desig:all action
                                      (type detecting)
                                      (object ?source-object-desig)))))
-        
+      
 
-;;=======================================MAIN=LOOP========================================================================
+      ;;=======================================MAIN=LOOP========================================================================
       
       (let* ((?place-poses (get-hardcoded-place-poses)))
-  
+        
         ;;Perform this loop max-objects amount of times.
         (dotimes (n max-objects)
           ;;Pick up the next best object in the list.
@@ -223,8 +223,8 @@
                                    (object-size ?object-size)
                                    (sequence-goal ?sequence-goals)
                                    (collision-mode ?collision-mode)))
-           
-           
+            
+            
             (park-robot)
 
             ;;Move to the shelf
@@ -262,7 +262,7 @@
               (move-hsr (make-pose-stamped-from-knowledge-result result)))
             (print "Loop finished."))))
 
-        (print "Demo finished."))))
+      (print "Demo finished."))))
 
 ;;@author Felix Krause
 (defun extract-pose (object)

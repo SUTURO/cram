@@ -743,6 +743,10 @@ When you are ready poke the white part of my hand." talk)
 
 (defun park-robot ()
   "Default pose"
+    (exe:perform (desig:a motion
+                        (type gripper-motion)
+                        (:open-close :close)
+                        (effort 0.1)))
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "park"))))
@@ -754,6 +758,10 @@ When you are ready poke the white part of my hand." talk)
 
 (defun perc-robot ()
   "Default pose"
+    (exe:perform (desig:a motion
+                        (type gripper-motion)
+                        (:open-close :close)
+                        (effort 0.1)))
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "perceive"))))
