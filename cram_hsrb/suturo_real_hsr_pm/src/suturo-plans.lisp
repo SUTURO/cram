@@ -58,6 +58,8 @@
         (let ((?object-height (cl-transforms:z ?object-size))
               (?context `(("action" . "grasping")
                           ("from_above" . ,?from-above))))
+          (su-demos::pre-align-height-robot)
+
           (exe:perform (desig:a motion
                                 (type aligning-height)
                                 (collision-mode ?collision-mode)
@@ -147,7 +149,7 @@
         (exe:perform (desig:a motion
                               (type gripper)
                               (gripper-state "open")))
-        
+        (su-demos::pre-align-height-robot)
         (let ((?motions (list :aligning-height :reaching))
               (?object-height (cl-transforms:z ?object-size)))
           (print "sequence1")
@@ -184,13 +186,12 @@
             ))
         (print "sequence2")
         ;;(break)
-        (let ((?motions (list :lifting :retracting)))
+        (let ((?motions (list :vertical-motion :retracting)))
           (exe:perform
            (desig:an action
                      (type sequence-goal)
                      (action "grasping")
                      (motions ?motions)
-                     (reference-frame "hand_gripper_tool_frame")
                      (object-name "test"))))))))
 
 ;; @author Luca Krohm
@@ -425,7 +426,7 @@
 ;; @author Luca Krohm
 (defun open-gripper (&key
                        ((:effort ?effort))
-                     &allow-other-keys)
+                    &allow-other-keys)
   (call-gripper-action (abs ?effort)))
 
 ;; @author Luca Krohm
@@ -579,7 +580,7 @@
                                                                                                                   ("message" . ,(giskard::to-hash-table ?object-size))))))
                                                               (:object-shape (when ?object-shape `("object_shape" . ,?object-shape)))
                                                               (:object-name (when ?object-name `("object_name". ,?object-name)))
-                                                              (:action (when ?action `("context" . ,(generate-context2 ?action '(from-above ?from-above)))))
+                                                              (:action (when ?action `("context" . ,(generate-context2 ?action `(from-above ,?from-above)))))
                                                               (:target-object (when ?target-object `("target_object" . ,?target-object)))
                                                               (:target-size (when ?target-size `("target_size" . (("message_type" . "geometry_msgs/Vector3")
                                                                                                                   ("message" . ,(giskard::to-hash-table ?target-size))))))
@@ -641,10 +642,7 @@
   
   ;;added action just in case we want failurehandling later
 
-  (exe:perform (desig:a motion
-                        (type gripper-motion)
-                        (:open-close :close)
-                        (effort 0.1)))
+
   
   (exe:perform (desig:a motion
                         (type :taking-pose)
@@ -687,11 +685,12 @@
 
 (defun generate-context2 (action &rest key-tuple-list)
   (let ((attr-list `(("action" . ,(keyword-to-giskard-param (intern (string action)))))))
-    (mapcar (lambda (key-tuple)
+    (mapc (lambda (key-tuple)
+            (when (second key-tuple)
               (setf attr-list (acons
                                (keyword-to-giskard-param (first key-tuple))
                                (second key-tuple)
-                               attr-list)))
+                               attr-list))))
             key-tuple-list)
     (print (reverse attr-list))))
 
