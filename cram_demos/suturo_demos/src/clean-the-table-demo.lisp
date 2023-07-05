@@ -91,7 +91,7 @@
             `("next_object" nextobject)
           (when break (break))
           
-          (loop until (and (string= nextobject "I")
+          (loop until (and (eq nextobject nil)
                            (eq mug nil))
                 do
                     (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
