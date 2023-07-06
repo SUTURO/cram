@@ -541,10 +541,38 @@
     (once (or (desig:desig-prop ?designator (:laser-avoidance-max-x ?laser-avoidance-max-x))
               (equal ?laser-avoidance-max-x nil)))
     )
+
+;;;;;;;;;;;;;
+  (<- (motion-grounding ?designator (su-open ?left-pose ?right-pose
+                                             ?collision-mode
+                                             ?collision-object-b
+                                             ?collision-object-b-link
+                                             ?collision-object-a
+                                             ?object-name
+                                             ?context
+                                             ))
+    (property ?designator (:type :su-open))
+    (once (or (property ?designator (:left-pose ?left-pose))
+              (equal ?left-pose nil)))
+    (once (or (property ?designator (:right-pose ?right-pose))
+              (equal ?right-pose nil)))
+    (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
+              (equal ?collision-mode nil)))
+    (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
+              (equal ?collision-object-b nil)))
+    (once (or (desig:desig-prop ?designator (:collision-object-b-link
+                                             ?collision-object-b-link))
+              (equal ?collision-object-b-link nil)))
+    (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
+              (equal ?collision-object-a nil)))
+    (once (or (desig:desig-prop ?designator (:object-name ?object-name))
+              (equal ?object-name nil)))
+    (once (or (desig:desig-prop ?designator (:context ?context))
+              (equal ?context nil))))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
   
-
-
- 
 
   (<- (motion-grounding ?designator (?push-or-pull ?arm ?poses
                                                    ?joint-angle

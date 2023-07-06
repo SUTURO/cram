@@ -20,5 +20,6 @@
    #:su-pour
    #:sequence-goal
    #:take-pose
+   #:robo-open-door
 
 ))

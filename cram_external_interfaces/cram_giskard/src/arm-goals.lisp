@@ -41,6 +41,38 @@
   "in rad/s")
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,,
+;; Robocup
+
+;;@author Luca Krohm
+(defun make-su-open-constraint (object-name context
+                              &key avoid-collisions-not-much)
+  "Receives parameters used by manipulation. Creates Constraint of the type Reach which is a classname inside the manipulation code, which is responsible for 'reaching'"
+  (roslisp:make-message
+   'giskard_msgs-msg:constraint
+   :type
+   "HandlelessOpenCart"
+   :parameter_value_pair
+   (giskard::alist->json-string
+    `(,@(when object-name
+          `(("object_name"
+             . ,object-name)))
+      
+      ,@(if avoid-collisions-not-much
+            `(("weight" . ,(roslisp-msg-protocol:symbol-code
+                           'giskard_msgs-msg:constraint
+                           :weight_above_ca))
+              (("weight" . (roslisp-msg-protocol:symbol-code
+                            'giskard_msgs-msg:constraint
+                            :weight_below_ca)))))))))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;@author Luca Krohm
 (defun make-reach-constraint (goal-pose object-name object-size object-shape context
                               &key avoid-collisions-not-much)
@@ -416,8 +448,13 @@
                      (make-sequence-constraint motion-sequence))
                    (when (eq action-type 'take-pose)
                      (make-take-pose-constraint pose-keyword head-pan head-tilt arm-lift arm-flex arm-roll wrist-flex wrist-roll))
-                    (when (eq action-type 'gripper)
+                   (when (eq action-type 'gripper)
                      (make-gripper-constraint gripper-state))
+
+
+
+                   (when (eq action-type 'su-open)
+                      (make-su-open-constraint object-name context))
                    ;;;;
 
                     )

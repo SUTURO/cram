@@ -39,5 +39,7 @@
    #:world-state-detect #:monitor-joint-state #:wait #:reach #:vertical-motion #:place #:retract #:open-gripper #:close-gripper #:align-height #:tilt #:sequence #:gripper
    #:take-pose
    #:carry-my-luggage
+
+   #:su-open
    ;; wait-pm
    #:wait-pm))
