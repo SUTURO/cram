@@ -704,3 +704,76 @@
              (setf str (replace str "_" :start1 (search "-" str))))
     str))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Robocup
+
+;; @author Luca Krohm
+;; @TODO failurehandling
+;; sequence doesnt make sense yet
+(defun robo-open-door (&key
+                         ((:collision-mode ?collision-mode))
+                         ((:collision-object-b ?collision-object-b))
+                         ((:collision-object-b-link ?collision-object-b-link))
+                         ((:collision-object-a ?collision-object-a))
+                         ((:object-name ?object-name))
+
+                       &allow-other-keys)
+  "Receives parameters from action-designator, and then executes the corresponding motions"
+  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+                 ?align-planes-left ?align-planes-right))
+
+  (exe:perform (desig:a motion
+                        (type gripper)
+                        (gripper-state "close")))
+
+  (let ((?context `(("action" . "approach-door"))))
+    (exe:perform (desig:a motion
+                          (type reaching)
+                          (collision-mode ?collision-mode)
+                          (collision-object-b ?collision-object-b)
+                          (collision-object-b-link ?collision-object-b-link)
+                          (collision-object-a ?collision-object-a)
+                          (allow-base ?move-base)
+                          (prefer-base ?prefer-base)
+                          (straight-line ?straight-line)
+                          (align-planes-left ?align-planes-left)
+                          (align-planes-right ?align-planes-right)
+                          (precise-tracking ?precise-tracking)
+                          (object-name ?handle-link)
+                          (goal-pose ?handle-pose)
+                          (context ?context))))
+  
+  (exe:perform (desig:a motion
+                        (type su-open)
+                        (object-name ?object-name)))
+  
+  (exe:perform (desig:a motion
+                        (type :retracting)
+                        (collision-mode ?collision-mode)
+                        (collision-object-b ?collision-object-b)
+                        (collision-object-b-link ?collision-object-b-link)
+                        (collision-object-a ?collision-object-a)
+                        (allow-base ?move-base)
+                        (prefer-base ?prefer-base)
+                        (straight-line ?straight-line)
+                        (align-planes-left ?align-planes-left)
+                        (align-planes-right ?align-planes-right)
+                        (precise-tracking ?precise-tracking)
+                        (tip-link t))))

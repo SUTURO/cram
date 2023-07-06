@@ -1,9 +1,224 @@
 (in-package :su-demos)
 
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Robocup test functions:
+
+(defun robocup-par-test ()
+  (cpl::par
+    (park-robot)
+    (move-hsr (cl-tf::make-pose-stamped "map" 0
+                                        (cl-tf:make-3d-vector 0 0 0)
+                                        (cl-tf:make-quaternion 0 0 0 1)))))
+
+(defun robocup-door-opening-test ()
+  (with-knowledge-result (placeshelf pickuptable shelftf)
+      `(and ("reset_user_data")
+            ("init_storing_groceries")
+            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
+            ("object_rel_pose" object1 "perceive" placeshelf)
+            ("has_tf_frame" "pantry:pantry:shelf_base_center" shelftf)            
+            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
+            ("object_rel_pose" object2 "perceive" pickuptable))
+
+    (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
+
+    (let ((?shelf-tf shelftf))
+      
+      (exe:perform (desig:an action
+                             (type robo-opening-door)
+                             (object-name ?shelf-tf)
+                             ;;(sequence-goal ?sequence-goals)
+                             (collision-mode :allow-all))))))
+
+(defun robocup-pick-test ()
+
+  (with-knowledge-result (placeshelf pickuptable)
+      `(and ("reset_user_data")
+            ("init_storing_groceries")
+            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
+            ("object_rel_pose" object1 "perceive" placeshelf)
+            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
+            ("object_rel_pose" object2 "perceive" pickuptable))
+
+    (loop
+      (park-robot)
+      (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+      (perc-robot)
+
+      (let* ((?source-object-desig
+               (desig:an object
+                         (type :everything)))
+             (?source-perceived-object-desig
+               (exe:perform (desig:an action
+                                      (type detecting)
+                                      (object ?source-object-desig)))))
+        
+             ;;Extracts pose from the return value of the detecting Designator.
+             (roslisp:with-fields 
+                 ((?pose
+                   (cram-designators::pose cram-designators:data)))
+                 ?source-perceived-object-desig
+
+                  (su-demos::with-knowledge-result (frame)
+                      `(and ("next_object" nextobject)
+                            ("object_shape_workaround" nextobject frame _ _ _))
+                            
+                    (let* ((?object-size (get-robo-object-size frame)))
+                      
+                      
+                      (exe:perform (desig:an action
+                                             (type :picking-up)
+                                             (goal-pose ?pose)
+                                             (object-size ?object-size)
+                                            ;; (sequence-goal ?sequence-goals)
+                                             (collision-mode :allow-all)))))
+
+                 (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+                 (park-robot)
+                 (call-text-to-speech-action "Please catch the object")
+                 (sleep 2)
+                 (exe:perform (desig:a motion
+                                       (type gripper)
+                                       (gripper-state "open"))))))))
+
+(defun get-robo-object-size (name)
+  (cond
+    ((search "Sponge" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Cleanser" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "JuicePack" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Cola" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Tropical" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Milk" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "IcedTea" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "OrangeJuice" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Tuna" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "TomatoSoup" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Spam" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Mustard" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "StrawberryJello" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "ChocolateJello" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "CoffeeGrounds" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Sugar" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Pear" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Plum" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Peach" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Lemon" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Orange" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Strawberry" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Banana" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Apple" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "TennisBall" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "RubiksCube" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "BaseBall" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Pringles" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Cornflakes" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Cheezit" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Spoon" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Plate" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Cup" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Fork" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Bowl" name) (cl-tf:make-3d-vector 1 2 3))
+    ((search "Knife" name) (cl-tf:make-3d-vector 1 2 3))))
+
+    
+    
+      
+    
+
+    
 
 
 
 
+
+(defun sg-demo(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
+  
+  ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
+  (with-knowledge-result (placeshelf pickuptable)
+      `(and ("reset_user_data")
+            ("init_storing_groceries")
+            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
+            ("object_rel_pose" object1 "perceive" placeshelf)
+            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
+            ("object_rel_pose" object2 "perceive" pickuptable))
+    (print "Storing-groceries plan started.")
+    (park-robot)
+
+     ;; (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
+    
+    ;; (perc-robot)
+
+    ;; (talk-request "I will now perceive the contents of the shelf!" talk)
+    
+    ;; (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
+    ;;        (?object-desig-list-shelf
+    ;;          (exe:perform (desig:all action
+    ;;                                  (type detecting)
+    ;;                                  (object ?source-object-desig-shelf)))))
+    
+    (talk-request "Hello I am Toya, i will now store those groceries!" talk)
+
+    (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+    
+    (perc-robot)
+
+    (talk-request "I will now perceive the groceries!" talk)
+    
+    (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
+           (?object-desig-list-shelf
+             (exe:perform (desig:all action
+                                     (type detecting)
+                                     (object ?source-object-desig-shelf)))))
+      
+      (with-knowledge-result (nextobject)
+          `("next_object" nextobject)
+        (print "next object:")
+        (print nextobject)
+        ;; (break)
+        (loop until (eq nextobject nil)
+              do
+                 (with-knowledge-result (pickpose placepose)
+                     `(and ("object_rel_pose" ,nextobject "destination" (list) placepose)
+                           ("object_pose" ,nextobject pickpose))
+
+                   (let ((?pick-pose (get-table-pos-sg nextobject pickpose))
+                         (?object-size (get-object-size nextobject)))
+
+
+                     (talk-request "I will now Pick up: " talk :current-knowledge-object nextobject)
+                     
+                     (exe:perform (desig:an action
+                                            (type :picking-up)
+                                            (goal-pose ?pick-pose)
+                                            (object-size ?object-size)
+                                            (sequence-goal ?sequence-goals)
+                                            (collision-mode ?collision-mode)))
+                     
+                     
+                     (park-robot)
+
+                     (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
+
+                     (let ((?place-pose placepose)
+                           (?neatly (get-neatly-placing-sg nextobject))
+                           (?from-above (get-from-above-sg nextobject)))
+
+                       (talk-request "I will now place: " talk :current-knowledge-object nextobject)
+
+                       (exe:perform (desig:an action
+                                              (type :placing)
+                                              (goal-pose ?place-pose)
+                                              (object-size ?object-size)
+                                              (sequence-goal ?sequence-goals)
+                                              (from-above NIL)
+                                              (neatly ?neatly)
+                                              (collision-mode ?collision-mode)))
+                       (talk-request "I placed the Object!" talk)
+                       (update-object-pose nextobject ?place-pose)
+
+                       (park-robot)
+                       (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))))))))))
+      
 
 
 ;;@author Felix Krause
@@ -233,7 +448,7 @@
                       ("object_rel_pose" object "perceive" result))
               (move-hsr (make-pose-stamped-from-knowledge-result result)))
 
-            ;;(talk-request "I will now place: " talk :current-knowledge-object ?current-object)
+            (talk-request "I will now place: " talk :current-knowledge-object ?current-object)
             
             ;;Places the object currently held.
             (exe:perform (desig:an action
