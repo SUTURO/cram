@@ -146,7 +146,11 @@
                            (setf ?current-object-from-above ?small-object-case)
 
                            (cond
-                             ((search "MetalPlate" ?current-object)
+                             ((or (search "MetalPlate" ?current-object)
+                                  (search "Spoon" ?current-object)
+                                  (search "Fork" ?current-object)
+                                  (search "Knife" ?current-object)
+                                  (search "Bowl" ?current-object))
                               ;; (setf ?plate ?current-object)
                               ;;maybe put this into a better function
                               (human-assist talk)
@@ -362,3 +366,45 @@
 
 
   
+(defun velocity-failurehandling ()
+  )
+
+(defvar *robot-velocitys-msg* (cpl:make-fluent :name :robot-velocitys)
+  "ROS message containing robot's current joint states.")
+
+(defvar *velocity-sub* nil
+  "Subscriber for robot's joint state topic.")
+
+(defparameter *velocity-frequency* 10.0d0
+  "How often to update the fluent in Hz")
+
+(defvar *velocity-timestamp* 0.0d0
+  "Timestamp of the last fluent update in secs.")
+
+(defvar *velocity-last-change* 0.0d0
+  "Timestamp of the last fluent update in secs.")
+
+(defun init-velocity-sub ()
+  (let ((update-every-?-secs (the double-float (/ 1.0d0 *velocity-frequency*))))
+    (declare (double-float update-every-?-secs))
+    (flet ((velocity-sub-cb (velocity-msg)
+             (when (> (the double-float (- (roslisp:ros-time) *velocity-timestamp*))
+                      update-every-?-secs)
+               (print "x")
+               (setf *velocity-timestamp* (the double-float (roslisp:ros-time)))
+               (setf *velocity-last-change* (- (roslisp:ros-time) *velocity-timestamp*))
+               (setf (cpl:value *robot-velocitys-msg*) velocity-msg))))
+      (setf *velocity-sub*
+            (roslisp:subscribe "/base_velocity"
+                               "geometry_msgs/Twist"
+                               #'velocity-sub-cb)))))
+
+(defun monitor-velocity (seconds)
+  (cpl:wait-for
+   (cpl:fl-funcall (lambda (vel-msg-fluent)
+                     (funcall #'> *velocity-last-change*
+                              seconds))
+                   *robot-velocitys-msg*))
+  (roslisp:ros-info (joints monitor)
+                    "test"))
+
