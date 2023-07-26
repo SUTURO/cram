@@ -53,8 +53,12 @@
    #:reset-collision-scene
    ;; process-module
    #:giskard-pm
-   ;;custom
+   ;; custom
    #:call-custom-action
    #:call-custom-gripper-action
    #:pick-up
+
+   ;; suturo
+   #:call-arm-motion-action
+   #:call-take-pose-action
    ))

@@ -96,6 +96,12 @@
      (:file "misc-goals" :depends-on ("package"
                                       "making-goal-messages"
                                       "action-client"))
+     (:file "motion-goals" :depends-on ("package"
+                                        "making-goal-messages"
+                                        "action-client"))
+     (:file "take-pose-goals" :depends-on ("package"
+                                        "making-goal-messages"
+                                        "action-client"))
      (:file "process-module" :depends-on ("package"
                                           "arm-goals"
                                           "base-goals"
