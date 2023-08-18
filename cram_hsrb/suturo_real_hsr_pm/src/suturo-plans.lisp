@@ -8,12 +8,6 @@
                   ((:collision-object-b ?collision-object-b))
                   ((:collision-object-b-link ?collision-object-b-link))
                   ((:collision-object-a ?collision-object-a))
-                  ((:move-base ?move-base))
-                  ((:prefer-base ?prefer-base))
-                  ((:straight-line ?straight-line))
-                  ((:align-planes-left ?align-planes-left))
-                  ((:align-planes-right ?align-planes-right))
-                  ((:precise-tracking ?precise-tracking))
                   ((:object-type ?object-type))
                   ((:goal-pose ?goal-pose))
                   ((:object-size ?object-size))
@@ -23,8 +17,8 @@
                   ((:sequence-goal ?sequence-goal))
                 &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
   (cpl:with-retry-counters ((manip-retries 1))
     (cpl:with-failure-handling
         ((common-fail:gripper-closed-completely (e)
@@ -66,12 +60,6 @@
                                 (collision-object-b ?collision-object-b)
                                 (collision-object-b-link ?collision-object-b-link)
                                 (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (goal-pose ?goal-pose)
                                 (context ?context)
                                 (object-height ?object-height)
@@ -123,12 +111,6 @@
                                   (collision-object-b ?collision-object-b)
                                   (collision-object-b-link ?collision-object-b-link)
                                   (collision-object-a ?collision-object-a)
-                                  (allow-base ?move-base)
-                                  (prefer-base ?prefer-base)
-                                  (straight-line ?straight-line)
-                                  (align-planes-left ?align-planes-left)
-                                  (align-planes-right ?align-planes-right)
-                                  (precise-tracking ?precise-tracking)
                                   (context ?context))))
 
           (exe:perform (desig:a motion
@@ -137,12 +119,6 @@
                                 (collision-object-b ?collision-object-b)
                                 (collision-object-b-link ?collision-object-b-link)
                                 (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (object-name ?object-name)))))
       
       (when ?sequence-goal
@@ -202,12 +178,6 @@
                 ((:collision-object-b ?collision-object-b))
                 ((:collision-object-b-link ?collision-object-b-link))
                 ((:collision-object-a ?collision-object-a))
-                ((:move-base ?move-base))
-                ((:prefer-base ?prefer-base))
-                ((:straight-line ?straight-line))
-                ((:align-planes-left ?align-planes-left))
-                ((:align-planes-right ?align-planes-right))
-                ((:precise-tracking ?precise-tracking))
                 ((:goal-pose ?goal-pose))
                 ((:object-size ?object-size))
                 ((:from-above ?from-above))
@@ -216,8 +186,8 @@
                 ((:sequence-goal ?sequence-goal))
               &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
   (unless ?sequence-goal
     (let ((?object-height (cl-transforms:z ?object-size))
           (?context `(("action" . "placing")
@@ -228,12 +198,6 @@
                             (collision-object-b ?collision-object-b)
                             (collision-object-b-link ?collision-object-b-link)
                             (collision-object-a ?collision-object-a)
-                            (allow-base ?move-base)
-                            (prefer-base ?prefer-base)
-                            (straight-line ?straight-line)
-                            (align-planes-left ?align-planes-left)
-                            (align-planes-right ?align-planes-right)
-                            (precise-tracking ?precise-tracking)
                             (goal-pose ?goal-pose)
                             (object-height ?object-height)
                             (context ?context))))
@@ -263,12 +227,6 @@
                                 (collision-object-b ?collision-object-b)
                                 (collision-object-b-link ?collision-object-b-link)
                                 (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (distance ?height)
                                 (context ?context)))))
 
@@ -279,12 +237,6 @@
                               (collision-object-b ?collision-object-b)
                               (collision-object-b-link ?collision-object-b-link)
                               (collision-object-a ?collision-object-a)
-                              (allow-base ?move-base)
-                              (prefer-base ?prefer-base)
-                              (straight-line ?straight-line)
-                              (align-planes-left ?align-planes-left)
-                              (align-planes-right ?align-planes-right)
-                              (precise-tracking ?precise-tracking)
                               (goal-pose ?goal-pose)))))
 
     (exe:perform (desig:a motion
@@ -296,13 +248,7 @@
                           (collision-mode ?collision-mode)
                           (collision-object-b ?collision-object-b)
                           (collision-object-b-link ?collision-object-b-link)
-                          (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking))))
+                          (collision-object-a ?collision-object-a))))
 
   (when ?sequence-goal
     (let ((?motions (list :aligning-height :reaching))
@@ -327,12 +273,6 @@
                             (collision-object-b ?collision-object-b)
                             (collision-object-b-link ?collision-object-b-link)
                             (collision-object-a ?collision-object-a)
-                            (allow-base ?move-base)
-                            (prefer-base ?prefer-base)
-                            (straight-line ?straight-line)
-                            (align-planes-left ?align-planes-left)
-                            (align-planes-right ?align-planes-right)
-                            (precise-tracking ?precise-tracking)
                             (goal-pose ?goal-pose))))
     (exe:perform (desig:a motion
                           (type gripper)
@@ -343,13 +283,7 @@
                           (collision-mode ?collision-mode)
                           (collision-object-b ?collision-object-b)
                           (collision-object-b-link ?collision-object-b-link)
-                          (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking)))))
+                          (collision-object-a ?collision-object-a)))))
 
 
 ;; @author Luca Krohm
@@ -360,19 +294,13 @@
                     ((:collision-object-b ?collision-object-b))
                     ((:collision-object-b-link ?collision-object-b-link))
                     ((:collision-object-a ?collision-object-a))
-                    ((:move-base ?move-base))
-                    ((:prefer-base ?prefer-base))
-                    ((:straight-line ?straight-line))
-                    ((:align-planes-left ?align-planes-left))
-                    ((:align-planes-right ?align-planes-right))
-                    ((:precise-tracking ?precise-tracking))
                     ((:handle-link ?handle-link))
                     ((:handle-pose ?handle-pose))
                     ((:joint-angle ?joint-angle))
                   &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
 
   (exe:perform (desig:a motion
                         (type gripper)
@@ -385,12 +313,6 @@
                           (collision-object-b ?collision-object-b)
                           (collision-object-b-link ?collision-object-b-link)
                           (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking)
                           (object-name ?handle-link)
                           (goal-pose ?handle-pose)
                           (context ?context))))
@@ -415,12 +337,6 @@
                         (collision-object-b ?collision-object-b)
                         (collision-object-b-link ?collision-object-b-link)
                         (collision-object-a ?collision-object-a)
-                        (allow-base ?move-base)
-                        (prefer-base ?prefer-base)
-                        (straight-line ?straight-line)
-                        (align-planes-left ?align-planes-left)
-                        (align-planes-right ?align-planes-right)
-                        (precise-tracking ?precise-tracking)
                         (tip-link t))))
 
 ;; @author Luca Krohm
@@ -545,7 +461,7 @@
                     (object-name "test")))))
  ))
 
-(defun sequence-goal (&key
+(defun sequence-goal-original (&key
                         ((:action ?action))
                         ((:motions ?motions))
                         ((:object-type ?object-type))
@@ -614,6 +530,16 @@
                           (collision-mode :allow-all)
                           (motion-sequence ?motion-sequence)))))
 
+(defun sequence-goal (&key
+                        ((:motion-sequence ?motion-sequence))
+                        ((:collision-mode ?collision-mode))
+                      &allow-other-keys)
+  
+  (exe:perform (desig:a motion
+                        (type :sequence-goal)
+                        (collision-mode ?collision-mode)
+                        (motion-sequence ?motion-sequence))))
+
 (defun take-pose (&key
                     ((:pose-keyword ?pose-keyword))
                     ((:head-pan ?head-pan))
@@ -664,42 +590,209 @@
 
 (defun get-attributes (motion)
   (case motion
-    (:aligning-height (list :action :goal-pose :object-height :object-name))
-    (:reaching (list :action :goal-pose :object-size :object-name))
-    (:vertical-motion (list :action :distance))
+    (:aligning-height (list :context :goal-pose :object-name))
+    (:reaching (list :context :goal-pose :object-name :object-size))
+    (:vertical-motion (list :context :distance))
     (:retracting (list :object-name :reference-frame))
     (:tilting (list :tilt-direction :tilt-angle))
     (:gripper (list :gripper-state))
-    (:taking-pose (list :pose-keyword))))
+    (:taking-pose (list :pose-keyword))
+    (otherwise (error "~a is not a valid keyword" motion))))
 
+(defun rel-context (motion)
+  (case motion
+    (:aligning-height (list :from-above))
+    (:reaching (list :object-type :object-shape :from-above))
+    (:vertical-motion (list :from-above))
+    (:retracting (list ))
+    (:tilting (list ))
+    (:gripper (list ))
+    (:taking-pose (list ))
+    (otherwise (error "~a is not a valid keyword" motion))))
 
+(defun get-all-attributes (motion-list)
+  (remove-duplicates (alexandria:flatten (mapcar #'get-attributes motion-list))))
 
+(defun generate-motion-sequence (motions context &rest args &key
+                                                              goal-pose
+                                                              object-name
+                                                              object-size
+                                                              tilt-direction
+                                                              tilt-angle
+                                                              reference-frame
+                                                              gripper-state
+                                                              pose-keyword
+                                                              distance)
 
-(defun generate-context (action &key from-above)
-  (print "context")
-  ;;(break)
-  (let ((attr-list `(("action" . ,action))))
-    (when from-above
-      (setf attr-list (reverse (acons "from_above" from-above attr-list))))
-    (print attr-list)))
-
-(defun generate-context2 (action &rest key-tuple-list)
-  (let ((attr-list `(("action" . ,(keyword-to-giskard-param (intern (string action)))))))
-    (mapc (lambda (key-tuple)
-            (when (second key-tuple)
-              (setf attr-list (acons
-                               (keyword-to-giskard-param (first key-tuple))
-                               (second key-tuple)
-                               attr-list))))
-            key-tuple-list)
-    (print (reverse attr-list))))
-
+  (declare (ignore goal-pose object-name object-size tilt-direction tilt-angle reference-frame gripper-state pose-keyword distance))
+  (setf args (remove-nil args))
+  (let (?motion-sequence)
+    
+    (dolist (motion motions ?motion-sequence)
+      (let* ((motion-name (case motion
+                            (:aligning-height "AlignHeight")
+                            (:reaching "Reaching")
+                            (:vertical-motion "VerticalMotion")
+                            (:retracting "Retracting")
+                            (:tilting "Tilting")
+                            (:gripper "MoveGripper")
+                            (:taking-pose "TakePose")))
+             (motion-attributes (remove :context (get-attributes motion)))
+             (attr-list (mapcar
+                         (lambda (attr)
+                           (generate-alist (assoc attr args)))
+                         motion-attributes))
+             (motion-context (cdr (assoc motion context))))
+        (when motion-context
+          (push (generate-alist `(context . ,motion-context)) attr-list))
+        (push (intern (giskard::alist->json-string `((,motion-name . ,attr-list)))) ?motion-sequence)))
+    (setf ?motion-sequence (coerce (reverse ?motion-sequence) 'vector))))
 
 
 (defun keyword-to-giskard-param (key)
-  (let ((str (string-downcase (symbol-name key))))
-    (loop while (search "-" str)
-          do
-             (setf str (replace str "_" :start1 (search "-" str))))
+  (let ((str (string-downcase key)))
+    (setf str (substitute #\_ #\- str))
     str))
 
+(defun generate-context (action motions &rest arguments &key
+                                                          from-above
+                                                          neatly
+                                                          object-type
+                                                          object-shape)
+  (declare (ignore from-above neatly object-type object-shape))
+  (setf arguments (remove-nil arguments))
+  (labels ((parse-content (cont)
+             (etypecase cont
+               (cl-tf:3d-vector (giskard::to-hash-table cont))
+               (cl-tf:pose-stamped (giskard::to-hash-table cont))
+               (t cont)))
+           (generate-msg (msg-type content)
+             `(("message_type" . ,msg-type)
+               ("message" . (("content" . ,content)))))
+           (gen-context (act args)
+             (let ((attr-list `(("action" . ,(generate-msg "manipulation_msgs/ContextAction"
+                                                           (keyword-to-giskard-param act))))))
+               (dolist (arg args attr-list)
+                 (push (cons (keyword-to-giskard-param (car arg))
+                             (generate-msg (to-giskard-msg-type (car arg))
+                                           (parse-content (cdr arg))))
+                       attr-list)))))
+    
+    (remove nil (mapcar (lambda (motion)
+                          (let ((args (remove-if (lambda (arg)
+                                                   (not (member (car arg) (rel-context motion))))
+                                                 arguments)))
+                            (when (rel-context motion)
+                              (cons motion (reverse (gen-context action args))))))
+                        motions))))
+
+(defun to-giskard-msg-type (param)
+  (case param
+    (:from-above "manipulation_msgs/ContextFromAbove")
+    (:neatly "manipulation_msgs/ContextNeatly")
+    (:object-type "manipulation_msgs/ContextObjectType")
+    (:object-shape "manipulation_msgs/ContextObjectShape")
+    (otherwise (error "Unknown parameter: ~a" param))))
+
+(defun remove-nil (list)
+  "Remove elements with nil second element and convert to cons cells."
+  (loop for (key value) on list by #'cddr
+        when value
+        collect (cons key value)))
+
+(defun generate-alist (alist)
+  (typecase (cdr alist)
+    (cl-tf:3d-vector `(,(keyword-to-giskard-param (car alist))
+                        . (("message_type" . "geometry_msgs/Vector3")
+                           ("message" . ,(giskard::to-hash-table (cdr alist))))))
+    (cl-tf:pose-stamped `(,(keyword-to-giskard-param (car alist))
+                            . (("message_type" . "geometry_msgs/PoseStamped")
+                               ("message" . ,(giskard::to-hash-table (cdr alist))))))
+    (t `(,(keyword-to-giskard-param (car alist)) . ,(cdr alist)))))
+
+
+(defmethod yason::encode ((symbol symbol) &optional (stream *standard-output*))
+  (let ((string (string symbol)))
+    (loop for char across string do
+         (write-char char stream))
+    string))
+
+(defun get-object-type (name)
+  "cup")
+
+(defun get-goal-pose (name)
+  (cl-tf2::make-pose-stamped
+   "map" 0
+   (cl-tf2::make-3d-vector 2.0 0.5 0.75)
+   (cl-tf2::make-quaternion 0 0 0 1)))
+
+(defun get-object-size (name)
+  (or (su-demos::with-knowledge-result (shape)
+          `("object_shape_workaround" ,name _ shape _ _)
+        (when (second shape)
+          (cl-tf:make-3d-vector (second shape)
+                                (third shape)
+                                (fourth shape))))
+      (cond
+        ((search "Cereal" name) (cl-tf2::make-3d-vector 0.14 0.06 0.225))
+        ((search "Milk" name) (cl-tf2::make-3d-vector 0.09 0.06 0.2))
+        ((or (search "Spoon" name)
+             (search "Fork" name))
+         (cl-tf2::make-3d-vector 0.19 0.02 0.01))
+        ((search "Bowl" name) (cl-tf2::make-3d-vector 0.16 0.16 0.05)))))
+
+(defun get-object-shape (name)
+  "cube")
+
+(defun get-from-above (name)
+  T)
+
+(defun get-neatly (name)
+  T)
+
+
+
+(defun motions->sequence-desig (motions)
+  (let* ((attribs (get-all-attributes motions))
+         (motion-string (string-downcase (format nil ":~{~a~^ :~}" motions)))
+         (info "Copy and paste the following designator into your code and adjust the variables where needed:")
+         (des-str '("(exe:perform"
+                    "(desig:an action"
+                    "(type sequence-goal)"
+                    "(action ?action)"))
+         (att-str (mapcar (lambda (attr)
+                             (string-downcase (format nil "(~a ?~a)" attr attr)))
+                          (remove :context attribs)))
+         (mot-str (push (format nil "(motions (~a))" motion-string) att-str)))
+    (format t "~a~%" info)
+    (format t "~{~%~a~^ ~}" des-str)
+    (format t "~{~%~a~^ ~}))~%~%" mot-str)))
+
+(defun attrib->desig-rule (attrib &optional (type :inference))
+
+  (case type
+      (:inference
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:mandatory
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(and (format \"WARNING: Please specify the ~a.\")~%" att-str)
+         (format t "(fail)))~%")
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:context
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)))))

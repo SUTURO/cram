@@ -14,18 +14,6 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:object-type ?object-type))
               (equal ?object-type nil)))
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
@@ -46,12 +34,6 @@
                                (:collision-object-b ?collision-object-b)
                                (:collision-object-b-link ?collision-object-b-link)
                                (:collision-object-a ?collision-object-a)
-                               (:move-base ?move-base)
-                               (:prefer-base ?prefer-base)
-                               (:align-planes-left ?align-planes-left)
-                               (:align-planes-right ?align-planes-right)
-                               (:straight-line ?straight-line)
-                               (:precise-tracking ?precise-tracking)
                                (:object-type ?object-type)
                                (:goal-pose ?goal-pose)
                                (:object-size ?object-size)
@@ -74,18 +56,6 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
               (equal ?goal-pose nil)))
     (once (or (desig:desig-prop ?designator (:object-size ?object-size))
@@ -104,12 +74,6 @@
                                (:collision-object-b ?collision-object-b)
                                (:collision-object-b-link ?collision-object-b-link)
                                (:collision-object-a ?collision-object-a)
-                               (:move-base ?move-base)
-                               (:prefer-base ?prefer-base)
-                               (:align-planes-left ?align-planes-left)
-                               (:align-planes-right ?align-planes-right)
-                               (:straight-line ?straight-line)
-                               (:precise-tracking ?precise-tracking)
                                (:goal-pose ?goal-pose)
                                (:object-size ?object-size)
                                (:from-above ?from-above)
@@ -130,18 +94,6 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:handle-link ?handle-link))
               (equal ?handle-link nil)))
     (once (or (desig:desig-prop ?designator (:handle-pose ?handle-pose))
@@ -154,12 +106,6 @@
                                (:collision-object-b ?collision-object-b)
                                (:collision-object-b-link ?collision-object-b-link)
                                (:collision-object-a ?collision-object-a)
-                               (:move-base ?move-base)
-                               (:prefer-base ?prefer-base)
-                               (:align-planes-left ?align-planes-left)
-                               (:align-planes-right ?align-planes-right)
-                               (:straight-line ?straight-line)
-                               (:precise-tracking ?precise-tracking)
                                (:handle-link ?handle-link)
                                (:handle-pose ?handle-pose)
                                (:joint-angle ?joint-angle))
@@ -201,8 +147,8 @@
                       ?resolved-action-designator))
 
 
-  (<- (action-grounding ?designator (su-real:sequence-goal ?resolved-action-designator))
-    (spec:property ?designator (:type :sequence-goal))
+  (<- (action-grounding ?designator (su-real::sequence-goal-original ?resolved-action-designator))
+    (spec:property ?designator (:type :sequence-goal-original))
     (once (or (desig:desig-prop ?designator (:action ?action))
               (equal ?action nil)))
     (once (or (desig:desig-prop ?designator (:motions ?motions))
@@ -240,7 +186,7 @@
     (once (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))
               (equal ?pose-keyword nil)))
 
-    (desig:designator :action ((:type :sequence-goal)
+    (desig:designator :action ((:type :sequence-goal-original)
                                (:action ?action)
                                (:motions ?motions)
                                (:collision-mode ?collision-mode)
@@ -259,7 +205,112 @@
                                (:reference-frame ?reference-frame)
                                (:gripper-state ?gripper-state)
                                (:pose-keyword ?pose-keyword)
+                               (:distance ?distance)
                                )
+                      ?resolved-action-designator))
+
+  (<- (desig:action-grounding ?designator (su-real:sequence-goal ?resolved-action-designator))
+    (spec:property ?designator (:type :sequence-goal))
+    (desig:desig-prop ?designator (:action ?action))
+
+    (-> (desig:desig-prop ?designator (:motions ?motions))
+        (lisp-fun su-real::get-all-attributes ?motions
+                  ?attributes)
+        (and (format "WARNING: Please specify a motion sequence.~%")
+             (fail)))
+    
+    (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
+              (equal ?collision-mode :allow-all)))
+    
+    (-> (member :object-name ?attributes)
+        (or (desig:desig-prop ?designator (:object-name ?object-name))
+            (and (format "WARNING: Please specify the objectname.~%")
+                 (fail)))
+        (equal ?object-name nil))
+
+    (-> (member :object-size ?attributes)
+        (once (or (desig:desig-prop ?designator (:object-size ?object-size))
+                  (lisp-fun su-real::get-object-size ?object-name
+                            ?object-size)))
+        (equal ?object-size nil))
+
+    (-> (member :goal-pose ?attributes)
+        (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
+                  (lisp-fun su-real::get-goal-pose ?object-name
+                            ?goal-pose)))
+        (equal ?goal-pose nil))
+
+    (-> (member :tilt-angle ?attributes)
+        (or (desig:desig-prop ?designator (:tilt-angle ?tilt-angle))
+            (and (format "WARNING: Please specify the tilt-angle.~%")
+                 (fail)))
+        (equal ?tilt-angle nil))
+
+    (-> (member :tilt-direction ?attributes)
+        (or (desig:desig-prop ?designator (:tilt-direction ?tilt-direction))
+            (and (format "WARNING: Please specify the tilt-direction.~%")
+                 (fail)))
+        (equal ?tilt-direction nil))
+
+    (-> (member :reference-frame ?attributes)
+        (or (desig:desig-prop ?designator (:reference-frame ?reference-frame))
+            (and (format "WARNING: Please specify the reference-frame.~%")
+                 (fail)))
+        (equal ?reference-frame nil))
+
+    (-> (member :gripper-state ?attributes)
+        (or (desig:desig-prop ?designator (:gripper-state ?gripper-state))
+            (and (format "WARNING: Please specify the gripper-state.~%")
+                 (fail)))
+        (equal ?gripper-state nil))
+
+    (-> (member :pose-keyword ?attributes)
+        (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))
+            (and (format "WARNING: Please specify the pose-keyword.~%")
+                 (fail)))
+        (equal ?pose-keyword nil))
+
+    (-> (member :distance ?attributes)
+        (or (desig:desig-prop ?designator (:distance ?distance))
+            (and (format "WARNING: Please specify the distance.~%")
+                 (fail)))
+        (equal ?distance nil))
+    
+    (-> (member :context ?attributes)
+        (and (once (or (desig:desig-prop ?designator (:from-above ?from-above))
+                       (lisp-fun su-real::get-from-above ?object-name
+                                 ?from-above)))
+             (once (or (desig:desig-prop ?designator (:neatly ?neatly))
+                       (lisp-fun su-real::get-neatly ?object-name
+                                 ?neatly)))
+             (once (or (desig:desig-prop ?designator (:object-type ?object-type))
+                       (lisp-fun su-real::get-object-type ?object-name
+                                 ?object-type)))
+             (once (or (desig:desig-prop ?designator (:object-shape ?object-shape))
+                       (lisp-fun su-real::get-object-shape ?object-name
+                                 ?object-shape)))
+             
+             (lisp-fun su-real::generate-context ?action ?motions :from-above ?from-above
+                                                                  :neatly ?neatly
+                                                                  :object-type ?object-type
+                                                                  :object-shape ?object-shape
+                                                                  ?context))
+        (equal ?context nil))
+
+    (lisp-fun su-real::generate-motion-sequence ?motions ?context :goal-pose ?goal-pose
+                                                                  :object-name ?object-name
+                                                                  :object-size ?object-size
+                                                                  :tilt-angle ?tilt-angle
+                                                                  :tilt-direction ?tilt-direction
+                                                                  :reference-frame ?reference-frame
+                                                                  :gripper-state ?gripper-state
+                                                                  :pose-keyword ?pose-keyword
+                                                                  :distance ?distance
+                                                                  ?motion-sequence)
+
+    (desig:designator :action ((:type :sequence-goal)
+                               (:motion-sequence ?motion-sequence)
+                               (:collision-mode ?collision-mode))
                       ?resolved-action-designator))
 
   (<- (action-grounding ?designator (su-real:take-pose ?resolved-action-designator))
@@ -290,32 +341,6 @@
                                (:arm-roll ?arm-roll)
                                (:wrist-flex ?wrist-flex)
                                (:wrist-roll ?wrist-roll)
-                               )
-                      ?resolved-action-designator))
-
-
-   (<- (action-grounding ?designator (su-real:robo-open-door ?resolved-action-designator))
-    (spec:property ?designator (:type :robo-opening-door))
-    (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
-              (equal ?collision-mode nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
-              (equal ?collision-object-b nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-b-link ?collision-object-b-link))
-              (equal ?collision-object-b-link nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
-              (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:object-name ?object-name))
-              (equal ?object-name nil)))
-    (once (or (desig:desig-prop ?designator (:sequence-goal ?sequence-goal))
-              (equal ?sequence-goal nil)))
-
-    (desig:designator :action ((:type :robo-opening-door)
-                               (:collision-mode ?collision-mode)
-                               (:collision-object-b ?collision-object-b)
-                               (:collision-object-b-link ?collision-object-b-link)
-                               (:collision-object-a ?collision-object-a)
-                               (:object-name ?object-name)
-                               (:sequence-goal ?sequence-goal)
                                )
                       ?resolved-action-designator))
 )
