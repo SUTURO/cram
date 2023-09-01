@@ -374,13 +374,156 @@
   (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
                  ?align-planes-left ?align-planes-right))
 
+  (let ((total-retries 0)
+        (base-distance 0.5)
+        (?reaching-pose ?handle-pose))
+    
+  ;; (exe:perform (desig:a motion
+  ;;                       (type gripper)
+  ;;                       (gripper-state "neutral")))
+
+  ;; (let ((?context `(("action" . "door-opening"))))
+  ;;   (exe:perform (desig:a motion
+  ;;                         (type reaching)
+  ;;                         (collision-mode ?collision-mode)
+  ;;                         (collision-object-b ?collision-object-b)
+  ;;                         (collision-object-b-link ?collision-object-b-link)
+  ;;                         (collision-object-a ?collision-object-a)
+  ;;                         (allow-base ?move-base)
+  ;;                         (prefer-base ?prefer-base)
+  ;;                         (straight-line ?straight-line)
+  ;;                         (align-planes-left ?align-planes-left)
+  ;;                         (align-planes-right ?align-planes-right)
+  ;;                         (precise-tracking ?precise-tracking)
+  ;;                         (object-name ?handle-link)
+  ;;                         (goal-pose ?reaching-pose)
+    ;;                         (context ?context))))
+
+
+
+    (cpl:with-retry-counters ((bumping-retries 3))
+      (cpl:with-failure-handling
+          ((common-fail:environment-manipulation-goal-not-reached (e)
+             (roslisp:ros-warn (suturo-reaching reaching)
+                               "Some manipulation failure happened: ~a"
+                               e)
+             (cpl:do-retry bumping-retries
+
+               (print "Bumped into door!")
+
+               (exe:perform (desig:a motion
+                                     (type :retracting)
+                                     (collision-mode ?collision-mode)
+                                     (collision-object-b ?collision-object-b)
+                                     (collision-object-b-link ?collision-object-b-link)
+                                     (collision-object-a ?collision-object-a)
+                                     (allow-base ?move-base)
+                                     (prefer-base ?prefer-base)
+                                     (straight-line ?straight-line)
+                                     (align-planes-left ?align-planes-left)
+                                     (align-planes-right ?align-planes-right)
+                                     (precise-tracking ?precise-tracking)
+                                     (tip-link t)))
+
+               (cpl:retry)
+               )))
+               (let ((?context `(("action" . "door-opening"))))
+                 (exe:perform (desig:a motion
+                                       (type reaching)
+                                       (collision-mode ?collision-mode)
+                                       (collision-object-b ?collision-object-b)
+                                       (collision-object-b-link ?collision-object-b-link)
+                                       (collision-object-a ?collision-object-a)
+                                       (allow-base ?move-base)
+                                       (prefer-base ?prefer-base)
+                                       (straight-line ?straight-line)
+                                       (align-planes-left ?align-planes-left)
+                                       (align-planes-right ?align-planes-right)
+                                       (precise-tracking ?precise-tracking)
+                                       (goal-pose ?reaching-pose)
+                                       (context ?context))))))
+
+    (break)
+    
   (exe:perform (desig:a motion
                         (type gripper)
-                        (gripper-state "neutral")))
+                          (gripper-state "close")))
 
-  (let ((?context `(("action" . "door-opening"))))
+    (sleep 2.0)
+
+  (cpl:with-retry-counters ((slipping-retries 3))
+    (cpl:with-failure-handling
+        ((common-fail:environment-manipulation-goal-not-reached (e)
+           (roslisp:ros-warn (suturo-open open-door)
+                             "Some manipulation failure happened: ~a"
+                             e)
+           (cpl:do-retry slipping-retries
+             
+             (print "Slipped while opening the door!")
+             ;;Increment tries counter.
+             (setf total-retries (1+ total-retries))
+             
+             ;;Define the amount the arm has to be moved & Change pose positive whatever axis that is
+             (setf base-distance (get-distance-to-move base-distance :slipping))
+             (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :slipping))
+             
+             ;;Open gripper
+             (exe:perform (desig:a motion
+                                   (type gripper)
+                                   (gripper-state "neutral")))
+
+             ;;Park robot
+             (su-demos::park-robot)
+
+             (break)
+             
+             ;;Move to the original position
+             ;; (su-demos::with-knowledge-result (result)
+             ;;     `(and ("has_urdf_name" object ,?handle-link)
+             ;;           ("object_rel_pose" object "perceive" result))
+             ;;   (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+             
+             ;;Extend arm with failure handling
+             (Print "Extending arm")
+             
+             (let ((?context `(("action" . "door-opening"))))
+               (exe:perform (desig:a motion
+                                     (type reaching)
+                                     (collision-mode ?collision-mode)
+                                     (collision-object-b ?collision-object-b)
+                                     (collision-object-b-link ?collision-object-b-link)
+                                     (collision-object-a ?collision-object-a)
+                                     (allow-base ?move-base)
+                                     (prefer-base ?prefer-base)
+                                     (straight-line ?straight-line)
+                                     (align-planes-left ?align-planes-left)
+                                     (align-planes-right ?align-planes-right)
+                                     (precise-tracking ?precise-tracking)
+                                     (goal-pose ?reaching-pose)
+                                     (context ?context))))
+
+             
+             ;;Close arm with failure handling
+             (exe:perform (desig:a motion
+                                   (type gripper)
+                                   (gripper-state "close")))
+           
+             
+             (cpl:retry)
+             )))
+      
+      (exe:perform (desig:a motion
+                            (type pulling)
+                            (arm :left)
+                            (collision-object-b-link ?handle-link)
+                            (joint-angle ?joint-angle)))))
+
     (exe:perform (desig:a motion
-                          (type reaching)
+                          (type gripper)
+                          (gripper-state "neutral")))
+  
+    (exe:perform (desig:a motion
+                          (type :retracting)
                           (collision-mode ?collision-mode)
                           (collision-object-b ?collision-object-b)
                           (collision-object-b-link ?collision-object-b-link)
@@ -391,37 +534,51 @@
                           (align-planes-left ?align-planes-left)
                           (align-planes-right ?align-planes-right)
                           (precise-tracking ?precise-tracking)
-                          (object-name ?handle-link)
-                          (goal-pose ?handle-pose)
-                          (context ?context))))
-  
-  (exe:perform (desig:a motion
-                        (type gripper)
-                        (gripper-state "close")))
-  
-  (exe:perform (desig:a motion
-                        (type pulling)
-                        (arm :left)
-                        (collision-object-b-link ?handle-link)
-                        (joint-angle ?joint-angle)))
+                          (tip-link t)))))
 
-  (exe:perform (desig:a motion
-                        (type gripper)
-                        (gripper-state "neutral")))
-  
-  (exe:perform (desig:a motion
-                        (type :retracting)
-                        (collision-mode ?collision-mode)
-                        (collision-object-b ?collision-object-b)
-                        (collision-object-b-link ?collision-object-b-link)
-                        (collision-object-a ?collision-object-a)
-                        (allow-base ?move-base)
-                        (prefer-base ?prefer-base)
-                        (straight-line ?straight-line)
-                        (align-planes-left ?align-planes-left)
-                        (align-planes-right ?align-planes-right)
-                        (precise-tracking ?precise-tracking)
-                        (tip-link t))))
+
+;; @author Felix Krause
+(defun modify-pose (pose distance case)
+  (case case
+    ((or :slipping :gripping)
+     (cl-tf::copy-pose-stamped
+      pose
+      :origin
+      (let ((vector (cl-tf::origin pose)))
+        (cl-tf::copy-3d-vector
+         vector
+         :x (+ (cl-tf::x vector) distance) 
+         :y (cl-tf::y vector)
+         :z (cl-tf::z vector)))
+      :orientation
+      (cl-tf::orientation pose)))
+    (:bumping
+     (cl-tf::copy-pose-stamped
+      pose
+      :origin
+      (let ((vector (cl-tf::origin pose)))
+        (cl-tf::copy-3d-vector
+         vector
+         :x (- (cl-tf::x vector) distance) 
+         :y (cl-tf::y vector)
+         :z (cl-tf::z vector)))
+      :orientation
+      (cl-tf::orientation pose)))))
+
+
+          
+;; @author Felix Krause
+(defun get-distance-to-move (current-distance case)
+  (case case
+    (:slipping
+     (/ current-distance 2)
+     )
+    (:gripping
+     (/ current-distance 1.5)
+     )
+    (:bumping
+     (/ current-distance 1.5)
+     )))
 
 ;; @author Luca Krohm
 (defun open-gripper (&key

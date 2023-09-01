@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="publish_environment" default="true" />
-  <arg name="env_model_yaml" default="rw_lab_master_2023.yaml" /> <!--rw_suturocup or rw_lab_master_2022 -->
+  <arg name="env_model_yaml" default="rw_lab_master_2023_post_robocup.yaml" /> <!--rw_suturocup or rw_lab_master_2023 -->
   <arg name="upload_hsrb" default="false" /> <!-- Set true if robot has publishes faulty robot_description -->
   <arg name="publish_joint_state" default="false" />
   <arg name="upload_map" default="true" />
   <arg name="run_snap_map" default="false" />
   <arg name="use_rviz" default="false"/>
+  <arg name="tmpmap" default="hsr_lab_master_2023_post_robocup/phillip_tmp_map.yaml"/>
+  <arg name="mp" default="hsr_lab_master_2023_post_robocup/hsr_lab_master_2023_post_robocup.yaml"/> 
 
   
  
@@ -22,8 +24,9 @@
   <!-- occupancy map -->
  <!--Either /maps/hsr_lab_master_2022/map3-door-open-cleaned.yaml -->
  <!-- or /maps/suturobocup-2023/SuturoApartLab-cleaned.yaml -->
+ <!-- hsr_lab_master_2023/hsr_lab_master_2023.yaml -->
   <group if="$(eval arg('upload_map') == true)">
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find suturo_resources)/maps/hsr_lab_master_2023/hsr_lab_master_2023.yaml" />
+  	<node name="map_server" pkg="map_server" type="map_server" args="$(find suturo_resources)/maps/$(arg mp)"/>
   </group>  
   
   <!-- kitchen URDF 

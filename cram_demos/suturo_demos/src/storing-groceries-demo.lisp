@@ -448,7 +448,7 @@
                       ("object_rel_pose" object "perceive" result))
               (move-hsr (make-pose-stamped-from-knowledge-result result)))
 
-            (talk-request "I will now place: " talk :current-knowledge-object ?current-object)
+            ;;(talk-request "I will now place: " talk :current-knowledge-object ?current-object)
             
             ;;Places the object currently held.
             (exe:perform (desig:an action
@@ -478,6 +478,46 @@
             (print "Loop finished."))))
 
       (print "Demo finished."))))
+
+
+
+(defun open-drawer-test () ;;2.92 // 3.26
+  (let ((?pose (cl-tf:make-pose-stamped "map" 0.0  (cl-tf:make-3d-vector 3.26 0.24 0.84) (cl-tf:make-quaternion 0 0 0 1))))
+
+    ;; (with-knowledge-result (?result)
+    ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+    ;;           ("object_rel_pose" object "perceive" result))
+    ;;         (exe:perform
+    ;;          (desig:an action
+    ;;                    (type going)
+    ;;                    (target (desig:a location (make-pose-stamped-from-knowledge-result ?result)))
+                      ;; )))
+
+    (exe:perform (desig:an action
+                           (type opening-door)
+                           (joint-angle -1.1)
+                           (handle-pose ?pose)
+                           (handle-link "iai_kitchen/shelf:shelf:shelf_door_left:handle")
+                           (tip-link t)
+                           (collision-mode :allow-all)))))
+
+
+      ;; (exe:perform
+      ;;  (desig:an action
+      ;;            (type going)
+      ;;            (target (desig:a location (make-pose-stamped-from-knowledge-result result)))))
+
+
+;; :check-goal-function (lambda (result status)
+;;                             (declare (ignore result))
+;;                             (when (or (not status)
+;;                                       (member status '(:preempted :aborted :timeout)))
+;;                               (make-instance
+;;                                   'common-fail:environment-manipulation-goal-not-reached
+;;                                 :description "Giskard action failed.")))))
+
+
+
 
 ;;@author Felix Krause
 (defun extract-pose (object)
