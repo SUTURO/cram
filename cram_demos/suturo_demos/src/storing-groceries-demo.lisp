@@ -228,10 +228,10 @@
 ;;joint-angle: Dictates how far the door will be opened, this value MUST ALWAYS be positive.
 ;;WARNING: JOINT ANGLE MUST BE POSITIVE FLOAT!
 ;;collision-mode: Different options, most common is :allow-all or :avoid-all
-(defun storing-groceries-demo (&key (max-objects 5) skip-open-shelf (skip-shelf-perception NIL) (joint-angle 0.4) (use-localization T) (what-door :both) (neatly NIL) (collision-mode :allow-all) (talk T) (?sequence-goals nil))
+(defun storing-groceries-demo (&key (max-objects 5) skip-open-shelf (skip-shelf-perception NIL) (joint-angle 1.1) (use-localization T) (what-door :both) (neatly NIL) (collision-mode :allow-all) (talk T) (?sequence-goals nil))
 
   ;;Shelf, table, handle-link-left and handle-link-right have to be set or checked in a new arena!
-  (let* ((shelf "open_shelf:shelf:shelf_base_center") ;;"shelf:shelf:shelf_base_center")
+  (let* ((shelf "shelf:shelf:shelf_base_center") ;;"shelf:shelf:shelf_base_center")
          (table "left_table:table:table_front_edge_center")
          (handle-link-left "iai_kitchen/shelf:shelf:shelf_door_left:handle")
          (handle-link-right "iai_kitchen/shelf:shelf:shelf_door_right:handle")
@@ -482,16 +482,14 @@
 
 
 (defun open-drawer-test () ;;2.92 // 3.26
-  (let ((?pose (cl-tf:make-pose-stamped "map" 0.0  (cl-tf:make-3d-vector 3.26 0.24 0.84) (cl-tf:make-quaternion 0 0 0 1))))
-
-    ;; (with-knowledge-result (?result)
-    ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-    ;;           ("object_rel_pose" object "perceive" result))
-    ;;         (exe:perform
-    ;;          (desig:an action
-    ;;                    (type going)
-    ;;                    (target (desig:a location (make-pose-stamped-from-knowledge-result ?result)))
-                      ;; )))
+  (let ((?pose (cl-tf:make-pose-stamped "map" 0.0  (cl-tf:make-3d-vector 3.20 0.19 0.84) (cl-tf:make-quaternion 0 0 0 1))))
+    
+  
+  (prepare-robot)
+    (with-knowledge-result (result)
+        `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+              ("object_rel_pose" object "perceive" result))
+            (move-hsr (make-pose-stamped-from-knowledge-result result)))
 
     (exe:perform (desig:an action
                            (type opening-door)
@@ -517,7 +515,41 @@
 ;;                                 :description "Giskard action failed.")))))
 
 
+(defun relocalize-robot (?handle)
 
+  (let ((?pose  (with-knowledge-result (result)
+                       `(and ("has_urdf_name" object ,?handle)
+                             ("object_rel_pose" object "perceive" result))
+                     (make-pose-stamped-from-knowledge-result result)))) 
+
+      (move-hsr (modify-pose-q ?pose 0 0 0.704 0.71))
+    
+      (move-hsr (modify-pose-q ?pose 0 0 0.704 -0.71))
+
+      (move-hsr ?pose)))
+
+
+;; @author Felix Krause
+(defun modify-pose-q (pose a b c d) 
+  (cl-tf::copy-pose-stamped
+   pose
+   :origin
+   (cl-tf::origin pose)
+   :orientation
+   (let ((quaternion (cl-tf::origin pose)))
+     (cl-tf::copy-quaternion
+      quaternion
+      :x a 
+      :y b
+      :z c
+      :w d))))
+
+
+(defun prepare-robot ()
+  "Open door pose"
+  (exe:perform (desig:an action
+                         (type taking-pose)
+                         (pose-keyword "pre_align_height"))))
 
 ;;@author Felix Krause
 (defun extract-pose (object)

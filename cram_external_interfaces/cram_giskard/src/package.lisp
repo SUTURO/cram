@@ -36,6 +36,8 @@
    ;; arm-goals
    #:call-arm-cartesian-action
    #:call-arm-joint-action
+   #:call-arm-motion-action
+   #:call-take-pose-action
    ;; base-goals
    #:call-base-action
    ;; torso-goals

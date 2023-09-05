@@ -249,7 +249,7 @@
 ;;@author Torge Olliges    
 (defun move-hsr (nav-goal-pose-stamped &optional (talk t))
   "Receives pose `nav-goal-pose-stamped'. Lets the robot move to the given pose with a motion designator"
-  (talk-request "Take care, I will now move!" talk)
+  ;;(talk-request "Take care, I will now move!" talk)
   (let* ((?successfull-pose (try-movement-stamped-list
                              (list nav-goal-pose-stamped))))
     (exe:perform 
