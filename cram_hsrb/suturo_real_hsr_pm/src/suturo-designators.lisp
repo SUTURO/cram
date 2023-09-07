@@ -5,6 +5,8 @@
   ;; @author Luca Krohm
   (<- (action-grounding ?designator (su-real:pick-up ?resolved-action-designator))
     (spec:property ?designator (:type :picking-up))
+
+    ;; collisionmode stuff not properly utilized atm
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -14,21 +16,52 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:object-type ?object-type))
-              (equal ?object-type nil)))
-    (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
-              (equal ?goal-pose nil)))
+
+
+    (or (desig:desig-prop ?designator (:object-name ?object-name))
+        (and (format "WARNING: Please specify the objectname.~%")
+             (fail)))
+
     (once (or (desig:desig-prop ?designator (:object-size ?object-size))
-              (equal ?object-size nil)))
-    (once (or (desig:desig-prop ?designator (:object-shape ?object-shape))
-              (equal ?object-shape nil)))
-    (once (or (desig:desig-prop ?designator (:object-name ?object-name))
-              (equal ?object-name nil)))
-    (once (or (desig:desig-prop ?designator (:from-above ?from-above))
-              (equal ?from-above nil)))
+                  (lisp-fun su-real::get-object-size ?object-name
+                            ?object-size)))
+   
+    (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
+              (lisp-fun su-real::get-goal-pose ?object-name
+                        ?goal-pose)))
+
+    (and (once (or (desig:desig-prop ?designator (:from-above ?from-above))
+                   (lisp-fun su-real::get-from-above ?object-name
+                             ?from-above)))
+         (once (or (desig:desig-prop ?designator (:object-type ?object-type))
+                   (lisp-fun su-real::get-object-type ?object-name
+                             ?object-type)))
+         (once (or (desig:desig-prop ?designator (:object-shape ?object-shape))
+                   (lisp-fun su-real::get-object-shape ?object-name
+                             ?object-shape)))
+
+         ;; ?action to give manipulation the appropriate context
+         (equal ?action :grasping)
+
+         ;; ?motion mostly fillervalue to make sure generate context works, so if you read
+         ;; this I did not come up with a way to fix it
+         ;; the problem: technically we want the "motions" parameter to be optional, but it is
+         ;; not possible to have &optional and &key in the same defun. I dont want to put
+         ;; "motions" to the other keys, because i iterate through "arguments", which would
+         ;; then also include "motions" which would be even uglier
+         (equal ?motions :reaching)
+         
+         (lisp-fun su-real::generate-context ?action ?motions :from-above ?from-above
+                                                              :object-type ?object-type
+                                                              :object-shape ?object-shape
+                                                              ?context))
+
     (once (or (desig:desig-prop ?designator (:sequence-goal ?sequence-goal))
               (equal ?sequence-goal nil)))
 
+    ;; object-type is technically redundand atm since it is in context and in here...this one
+    ;; is just for easier access to the type for the purpose of reperceiving the object during
+    ;; the failurehandling
     (desig:designator :action ((:type :picking-up)
                                (:collision-mode ?collision-mode)
                                (:collision-object-b ?collision-object-b)
@@ -37,16 +70,16 @@
                                (:object-type ?object-type)
                                (:goal-pose ?goal-pose)
                                (:object-size ?object-size)
-                               (:object-shape ?object-shape)
                                (:object-name ?object-name)
-                               (:from-above ?from-above)
-                               (:sequence-goal ?sequence-goal)
-                               )
+                               (:context ?context)
+                               (:sequence-goal ?sequence-goal))
                       ?resolved-action-designator))
 
   ;; @author Luca Krohm
   (<- (action-grounding ?designator (su-real:place ?resolved-action-designator))
     (spec:property ?designator (:type :placing))
+
+    ;; collisionmode stuff not properly utilized atm
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -56,14 +89,41 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
-              (equal ?goal-pose nil)))
+
+    (or (desig:desig-prop ?designator (:object-name ?object-name))
+        (and (format "WARNING: Please specify the objectname.~%")
+             (fail)))
+
     (once (or (desig:desig-prop ?designator (:object-size ?object-size))
-              (equal ?object-size nil)))
-    (once (or (desig:desig-prop ?designator (:from-above ?from-above))
-              (equal ?from-above nil)))
-    (once (or (desig:desig-prop ?designator (:neatly ?neatly))
-              (equal ?neatly nil)))
+                  (lisp-fun su-real::get-object-size ?object-name
+                            ?object-size)))
+   
+    (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
+              (lisp-fun su-real::get-goal-pose ?object-name
+                        ?goal-pose)))
+    
+    (and (once (or (desig:desig-prop ?designator (:from-above ?from-above))
+                   (lisp-fun su-real::get-from-above ?object-name
+                             ?from-above)))
+         (once (or (desig:desig-prop ?designator (:neatly ?neatly))
+                   (lisp-fun su-real::get-neatly ?object-name
+                             ?neatly)))
+
+         ;; ?action to give manipulation the appropriate context
+         (equal ?action :placing)
+
+         ;; ?motion mostly fillervalue to make sure generate context works, so if you read
+         ;; this I did not come up with a way to fix it
+         ;; the problem: technically we want the "motions" parameter to be optional, but it is
+         ;; not possible to have &optional and &key in the same defun. I dont want to put
+         ;; "motions" to the other keys, because i iterate through "arguments", which would
+         ;; then also include "motions" which would be even uglier
+         (equal ?motions :reaching)
+         
+         (lisp-fun su-real::generate-context ?action ?motions :from-above ?from-above
+                                                              :neatly ?neatly
+                                                              ?context))
+    
     (once (or (desig:desig-prop ?designator (:inside ?inside))
               (equal ?inside nil)))
     (once (or (desig:desig-prop ?designator (:sequence-goal ?sequence-goal))
@@ -76,8 +136,7 @@
                                (:collision-object-a ?collision-object-a)
                                (:goal-pose ?goal-pose)
                                (:object-size ?object-size)
-                               (:from-above ?from-above)
-                               (:neatly ?neatly)
+                               (:context ?context)
                                (:inside ?inside)
                                (:sequence-goal ?sequence-goal))
                       ?resolved-action-designator))
@@ -94,12 +153,19 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:handle-link ?handle-link))
-              (equal ?handle-link nil)))
+
+    (or (desig:desig-prop ?designator (:handle-link ?handle-link))
+        (and (format "WARNING: Please specify the handle-link.~%")
+             (fail)))
+
+    ;; handle-pose is optional since we might not want to try to perceive
+    ;; the handle before opening it 
     (once (or (desig:desig-prop ?designator (:handle-pose ?handle-pose))
               (equal ?handle-pose nil)))
-    (once (or (desig:desig-prop ?designator (:joint-angle ?joint-angle))
-              (equal ?joint-angle nil)))
+
+    (or (desig:desig-prop ?designator (:joint-angle ?joint-angle))
+        (and (format "WARNING: Please specify the joint-angle.~%")
+             (fail)))
 
     (desig:designator :action ((:type :opening-door)
                                (:collision-mode ?collision-mode)
@@ -123,14 +189,37 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:object-size ?object-size))
-              (equal ?object-size nil)))
-    (once (or (desig:desig-prop ?designator (:target-object ?target-object))
-              (equal ?target-object nil)))
+
+    (or (desig:desig-prop ?designator (:target-name ?target-name))
+        (and (format "WARNING: Please specify the targetname.~%")
+             (fail)))
+
+    (or (desig:desig-prop ?designator (:object-size ?object-size))
+        (and (format "WARNING: Please specify the size of the to-be-poured object.~%")
+             (fail)))
+
     (once (or (desig:desig-prop ?designator (:target-size ?target-size))
-              (equal ?target-size nil)))
-    (once (or (desig:desig-prop ?designator (:target-name ?target-name))
-              (equal ?target-name nil)))
+              (lisp-fun su-real::get-object-size ?target-name
+                        ?target-size)))
+
+    (once (or (desig:desig-prop ?designator (:target-object ?target-object))
+                  (lisp-fun su-real::get-frame ?target-name
+                            ?target-object)))
+
+    (and ;; ?action to give manipulation the appropriate context
+         (equal ?action :pouring)
+
+         ;; ?motion mostly fillervalue to make sure generate context works, so if you read
+         ;; this I did not come up with a way to fix it
+         ;; the problem: technically we want the "motions" parameter to be optional, but it is
+         ;; not possible to have &optional and &key in the same defun. I dont want to put
+         ;; "motions" to the other keys, because i iterate through "arguments", which would
+         ;; then also include "motions" which would be even uglier
+         (equal ?motions :reaching)
+         
+         (lisp-fun su-real::generate-context ?action ?motions
+                   ?context))
+    
     (once (or (desig:desig-prop ?designator (:sequence-goal ?sequence-goal))
               (equal ?sequence-goal nil)))
 
@@ -143,71 +232,10 @@
                                (:target-object ?target-object)
                                (:target-size ?target-size)
                                (:target-name ?target-name)
+                               (:context ?context)
                                (:sequence-goal ?sequence-goal))
                       ?resolved-action-designator))
 
-
-  (<- (action-grounding ?designator (su-real::sequence-goal-original ?resolved-action-designator))
-    (spec:property ?designator (:type :sequence-goal-original))
-    (once (or (desig:desig-prop ?designator (:action ?action))
-              (equal ?action nil)))
-    (once (or (desig:desig-prop ?designator (:motions ?motions))
-              (equal ?motions nil)))
-    (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
-              (equal ?collision-mode nil)))
-    (once (or (desig:desig-prop ?designator (:object-type ?object-type))
-              (equal ?object-type nil)))
-    (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
-              (equal ?goal-pose nil)))
-    (once (or (desig:desig-prop ?designator (:object-height ?object-height))
-              (equal ?object-height nil)))
-    (once (or (desig:desig-prop ?designator (:object-size ?object-size))
-              (equal ?object-size nil)))
-    (once (or (desig:desig-prop ?designator (:object-shape ?object-shape))
-              (equal ?object-shape nil)))
-    (once (or (desig:desig-prop ?designator (:object-name ?object-name))
-              (equal ?object-name nil)))
-    (once (or (desig:desig-prop ?designator (:from-above ?from-above))
-              (equal ?from-above nil)))
-    (once (or (desig:desig-prop ?designator (:target-object ?target-object))
-              (equal ?target-object nil)))
-    (once (or (desig:desig-prop ?designator (:target-size ?target-size))
-              (equal ?target-size nil)))
-    (once (or (desig:desig-prop ?designator (:target-name ?target-name))
-              (equal ?target-name nil)))
-    (once (or (desig:desig-prop ?designator (:tilt-direction ?tilt-direction))
-              (equal ?tilt-direction nil)))
-    (once (or (desig:desig-prop ?designator (:tilt-angle ?tilt-angle))
-              (equal ?tilt-angle nil)))
-    (once (or (desig:desig-prop ?designator (:reference-frame ?reference-frame))
-              (equal ?reference-frame nil)))
-    (once (or (desig:desig-prop ?designator (:gripper-state ?gripper-state))
-              (equal ?gripper-state nil)))
-    (once (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))
-              (equal ?pose-keyword nil)))
-
-    (desig:designator :action ((:type :sequence-goal-original)
-                               (:action ?action)
-                               (:motions ?motions)
-                               (:collision-mode ?collision-mode)
-                               (:object-type ?object-type)
-                               (:goal-pose ?goal-pose)
-                               (:object-height ?object-height)
-                               (:object-size ?object-size)
-                               (:object-shape ?object-shape)
-                               (:object-name ?object-name)
-                               (:from-above ?from-above)
-                               (:target-object ?target-object)
-                               (:target-size ?target-size)
-                               (:target-name ?target-name)
-                               (:tilt-angle ?tilt-angle)
-                               (:tilt-direction ?tilt-direction)
-                               (:reference-frame ?reference-frame)
-                               (:gripper-state ?gripper-state)
-                               (:pose-keyword ?pose-keyword)
-                               (:distance ?distance)
-                               )
-                      ?resolved-action-designator))
 
   (<- (desig:action-grounding ?designator (su-real:sequence-goal ?resolved-action-designator))
     (spec:property ?designator (:type :sequence-goal))
@@ -340,7 +368,6 @@
                                (:arm-flex ?arm-flex)
                                (:arm-roll ?arm-roll)
                                (:wrist-flex ?wrist-flex)
-                               (:wrist-roll ?wrist-roll)
-                               )
+                               (:wrist-roll ?wrist-roll))
                       ?resolved-action-designator))
 )
