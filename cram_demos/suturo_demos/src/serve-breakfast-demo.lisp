@@ -43,7 +43,7 @@
   (with-knowledge-result (shelf table)
       `(and ("reset_user_data")
             ("init_serve_breakfast")
-            ("has_urdf_name" object1 "open_shelf:shelf:shelf_base_center")
+            ("has_urdf_name" object1 "shelf:shelf:shelf_base_center")
             ("object_rel_pose" object1 "perceive" shelf)
             ("has_urdf_name" object2 "left_table:table:table_front_edge_center")
             ("object_rel_pose" object2 "perceive" (list ("direction" "-y")) table))
@@ -61,7 +61,7 @@
            (?source-object-desig
              (desig:all object
                         (type :breakfast))))
-      (perc-robot)
+      (park-robot)
       (talk-request "I am now perceiving!" talk)
       (exe:perform (desig:an action
                              (type detecting)
