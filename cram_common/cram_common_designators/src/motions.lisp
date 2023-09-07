@@ -327,9 +327,9 @@
                (equal ?motion-sequence nil))))
 
   (<- (motion-grounding ?designator (take-pose ?collision-mode
-                                              ?collision-object-b
-                                              ?collision-object-b-link
-                                              ?collision-object-a
+                                              ;; ?collision-object-b
+                                              ;; ?collision-object-b-link
+                                              ;; ?collision-object-a
                                               ?pose-keyword
                                               ?head-pan
                                               ?head-tilt
@@ -342,13 +342,13 @@
      (property ?designator (:type :taking-pose))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
                (equal ?collision-mode nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
-               (equal ?collision-object-b nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-b-link
-                                              ?collision-object-b-link))
-               (equal ?collision-object-b-link nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
-               (equal ?collision-object-a nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
+     ;;           (equal ?collision-object-b nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-b-link
+     ;;                                          ?collision-object-b-link))
+     ;;           (equal ?collision-object-b-link nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
+     ;;           (equal ?collision-object-a nil)))
     
      (once (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))
                (equal ?pose-keyword nil)))
