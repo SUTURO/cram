@@ -258,12 +258,11 @@
               (pose ?successfull-pose)))))
 
 ;;====================================================================================================
-;;knowledge
 
 ;; (with-knowledge-result (a b) '(= (list 1 2) (list a b))
 ;;             (print a)
 ;;             (print b))
-;;@author Tede von Knorre, Felix Krause
+;;@author Felix Krause, Tede von Knorre
 (defmacro with-knowledge-result (vars query &body body)
   `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
      (if (eq raw-response 1)
@@ -277,7 +276,7 @@
 
 
 
-;;@author Tede von Knorre, Felix Krause
+;;@author Felix Krause
 (defun simple-knowledge (query &optional (package *package*))
   (print package)
   (with-safe-prolog
@@ -289,19 +288,17 @@
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) (third (second result)))
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
-  )
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) 0.7125000 )
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
-  )
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies-breakfast (result)
   (let ((height (cond
                   ((> (third (second result)) 1.12000) 1.13500)
@@ -315,25 +312,23 @@
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
 
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (+ (first (second result)) 0.00) (second (second result)) (- (third (second result)) 0.02))
-   (cl-tf:make-identity-rotation))
-  )
+   (cl-tf:make-identity-rotation)))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-mug (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (- (first (second result)) 0.0) (+ (second (second result)) 0.02) 0.76000)
-   (cl-tf:make-identity-rotation))
-  )
+   (cl-tf:make-identity-rotation)))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl-breakfast (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0

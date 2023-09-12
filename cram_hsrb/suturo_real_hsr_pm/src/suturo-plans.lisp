@@ -375,7 +375,7 @@
                  ?align-planes-left ?align-planes-right))
 
   (let ((total-retries 0)
-        (base-distance 0.05)
+        (base-distance 0.02)
         (?reaching-pose ?handle-pose))
     
   (exe:perform (desig:a motion
@@ -413,7 +413,7 @@
            (print base-distance)
            (print ?reaching-pose)
            (setf base-distance (get-distance-to-move base-distance :bumping))
-           ;;(setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+           (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
            (print ?reaching-pose)
            (print base-distance)
            (exe:perform (desig:a motion
@@ -488,7 +488,7 @@
              ;;Define the amount the arm has to be moved & Change pose positive whatever axis that is
              (setf base-distance (get-distance-to-move base-distance :slipping))
              (print base-distance)
-             ;;(setf ?reaching-pose (modify-pose ?reaching-pose base-distance :slipping))
+             (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :slipping))
              (print ?reaching-pose)
              ;;Open gripper
              (exe:perform (desig:a motion
@@ -525,7 +525,7 @@
                         (print base-distance)
                         (setf base-distance (get-distance-to-move base-distance :bumping))
                         (print base-distance)
-                        ;;(setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+                        (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
                         (print ?reaching-pose)
                         (exe:perform (desig:a motion
                                               (type :retracting)
@@ -603,6 +603,7 @@
                           (collision-object-b-link ?collision-object-b-link)
                           (collision-object-a ?collision-object-a)
                           (allow-base ?move-base)
+                          (reference-frame t)
                           (prefer-base ?prefer-base)
                           (straight-line ?straight-line)
                           (align-planes-left ?align-planes-left)
@@ -645,13 +646,13 @@
 (defun get-distance-to-move (current-distance case)
   (case case
     (:slipping
-     (- current-distance 0.01)
+     (/ current-distance 1.2)
      )
     (:gripping
-     (/ current-distance 1.5)
+     (/ current-distance 1.1)
      )
     (:bumping
-     (- current-distance 0.01)
+     (/ current-distance 1.1)
      )))
 
 ;; @author Luca Krohm

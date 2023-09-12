@@ -131,114 +131,114 @@
 
 
 
-(defun sg-demo(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
+;; (defun sg-demo(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
   
-  ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
-  (with-knowledge-result (placeshelf pickuptable)
-      `(and ("reset_user_data")
-            ("init_storing_groceries")
-            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
-            ("object_rel_pose" object1 "perceive" placeshelf)
-            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
-            ("object_rel_pose" object2 "perceive" pickuptable))
-    (print "Storing-groceries plan started.")
-    (park-robot)
+;;   ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
+;;   (with-knowledge-result (placeshelf pickuptable)
+;;       `(and ("reset_user_data")
+;;             ("init_storing_groceries")
+;;             ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
+;;             ("object_rel_pose" object1 "perceive" placeshelf)
+;;             ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
+;;             ("object_rel_pose" object2 "perceive" pickuptable))
+;;     (print "Storing-groceries plan started.")
+;;     (park-robot)
 
-     ;; (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
+;;      ;; (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
     
-    ;; (perc-robot)
+;;     ;; (perc-robot)
 
-    ;; (talk-request "I will now perceive the contents of the shelf!" talk)
+;;     ;; (talk-request "I will now perceive the contents of the shelf!" talk)
     
-    ;; (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
-    ;;        (?object-desig-list-shelf
-    ;;          (exe:perform (desig:all action
-    ;;                                  (type detecting)
-    ;;                                  (object ?source-object-desig-shelf)))))
+;;     ;; (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
+;;     ;;        (?object-desig-list-shelf
+;;     ;;          (exe:perform (desig:all action
+;;     ;;                                  (type detecting)
+;;     ;;                                  (object ?source-object-desig-shelf)))))
     
-    (talk-request "Hello I am Toya, i will now store those groceries!" talk)
+;;     (talk-request "Hello I am Toya, i will now store those groceries!" talk)
 
-    (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+;;     (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
     
-    (perc-robot)
+;;     (perc-robot)
 
-    (talk-request "I will now perceive the groceries!" talk)
+;;     (talk-request "I will now perceive the groceries!" talk)
     
-    (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
-           (?object-desig-list-shelf
-             (exe:perform (desig:all action
-                                     (type detecting)
-                                     (object ?source-object-desig-shelf)))))
+;;     (let* ((?source-object-desig-shelf (desig:all object (type :everything)))
+;;            (?object-desig-list-shelf
+;;              (exe:perform (desig:all action
+;;                                      (type detecting)
+;;                                      (object ?source-object-desig-shelf)))))
       
-      (with-knowledge-result (nextobject)
-          `("next_object" nextobject)
-        (print "next object:")
-        (print nextobject)
-        ;; (break)
-        (loop until (eq nextobject nil)
-              do
-                 (with-knowledge-result (pickpose placepose)
-                     `(and ("object_rel_pose" ,nextobject "destination" (list) placepose)
-                           ("object_pose" ,nextobject pickpose))
+;;       (with-knowledge-result (nextobject)
+;;           `("next_object" nextobject)
+;;         (print "next object:")
+;;         (print nextobject)
+;;         ;; (break)
+;;         (loop until (eq nextobject nil)
+;;               do
+;;                  (with-knowledge-result (pickpose placepose)
+;;                      `(and ("object_rel_pose" ,nextobject "destination" (list) placepose)
+;;                            ("object_pose" ,nextobject pickpose))
 
-                   (let ((?pick-pose (get-table-pos-sg nextobject pickpose))
-                         (?object-size (get-object-size nextobject)))
+;;                    (let ((?pick-pose (get-table-pos-sg nextobject pickpose))
+;;                          (?object-size (get-object-size nextobject)))
 
 
-                     (talk-request "I will now Pick up: " talk :current-knowledge-object nextobject)
+;;                      (talk-request "I will now Pick up: " talk :current-knowledge-object nextobject)
                      
-                     (exe:perform (desig:an action
-                                            (type :picking-up)
-                                            (goal-pose ?pick-pose)
-                                            (object-size ?object-size)
-                                            (sequence-goal ?sequence-goals)
-                                            (collision-mode ?collision-mode)))
+;;                      (exe:perform (desig:an action
+;;                                             (type :picking-up)
+;;                                             (goal-pose ?pick-pose)
+;;                                             (object-size ?object-size)
+;;                                             (sequence-goal ?sequence-goals)
+;;                                             (collision-mode ?collision-mode)))
                      
                      
-                     (park-robot)
+;;                      (park-robot)
 
-                     (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
+;;                      (move-hsr (make-pose-stamped-from-knowledge-result placeshelf))
 
-                     (let ((?place-pose placepose)
-                           (?neatly (get-neatly-placing-sg nextobject))
-                           (?from-above (get-from-above-sg nextobject)))
+;;                      (let ((?place-pose placepose)
+;;                            (?neatly (get-neatly-placing-sg nextobject))
+;;                            (?from-above (get-from-above-sg nextobject)))
 
-                       (talk-request "I will now place: " talk :current-knowledge-object nextobject)
+;;                        (talk-request "I will now place: " talk :current-knowledge-object nextobject)
 
-                       (exe:perform (desig:an action
-                                              (type :placing)
-                                              (goal-pose ?place-pose)
-                                              (object-size ?object-size)
-                                              (sequence-goal ?sequence-goals)
-                                              (from-above NIL)
-                                              (neatly ?neatly)
-                                              (collision-mode ?collision-mode)))
-                       (talk-request "I placed the Object!" talk)
-                       (update-object-pose nextobject ?place-pose)
+;;                        (exe:perform (desig:an action
+;;                                               (type :placing)
+;;                                               (goal-pose ?place-pose)
+;;                                               (object-size ?object-size)
+;;                                               (sequence-goal ?sequence-goals)
+;;                                               (from-above NIL)
+;;                                               (neatly ?neatly)
+;;                                               (collision-mode ?collision-mode)))
+;;                        (talk-request "I placed the Object!" talk)
+;;                        (update-object-pose nextobject ?place-pose)
 
-                       (park-robot)
-                       (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))))))))))
+;;                        (park-robot)
+;;                        (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))))))))))
       
 
 
 ;;@author Felix Krause
 ;;max-objects dictates how many times the main loop from the table to the shelf should be performed.
-;;open-shelf dictates if the shelf door should be opened. open-shelf = 0 -> skip door, open-shelf > 0 -> open door.
+;;open-shelf dictates if the shelf door should be opened.
 ;;skip-shelf-perception dictates if the contents of the shelf should be perceived. Useful for testing. skip-shelf-perception = T -> skip perception of shelf contents, skip-shelf-perception = NIL -> perceive shelf contents.
 ;;joint-angle: Dictates how far the door will be opened, this value MUST ALWAYS be positive.
 ;;WARNING: JOINT ANGLE MUST BE POSITIVE FLOAT!
 ;;collision-mode: Different options, most common is :allow-all or :avoid-all
-(defun storing-groceries-demo (&key (max-objects 5) skip-open-shelf (skip-shelf-perception NIL) (joint-angle 1.1) (use-localization T) (what-door :both) (neatly NIL) (collision-mode :allow-all) (talk T) (?sequence-goals nil))
+(defun storing-groceries-demo (&key (max-objects 5) (skip-open-shelf NIL) (skip-shelf-perception NIL) (joint-angle 1.1) (use-localization T) (what-door :both) (neatly NIL) (collision-mode :allow-all) (talk T) (?sequence-goals nil))
 
   ;;Shelf, table, handle-link-left and handle-link-right have to be set or checked in a new arena!
-  (let* ((shelf "shelf:shelf:shelf_base_center") ;;"shelf:shelf:shelf_base_center")
+  (let* ((shelf "shelf:shelf:shelf_base_center")
          (table "left_table:table:table_front_edge_center")
          (handle-link-left "iai_kitchen/shelf:shelf:shelf_door_left:handle")
          (handle-link-right "iai_kitchen/shelf:shelf:shelf_door_right:handle")
          (all-designator (desig:all object (type :everything)))
          (?neatly neatly)
-         (?joint-angle-left joint-angle)
-         (?joint-angle-right (* joint-angle -1)))
+         (?joint-angle-left (* joint-angle -1))
+         (?joint-angle-right joint-angle))
 
     ;;open_shelf:shelf:shelf_base_center
     ;;shelf:shelf:shelf_base_center
@@ -351,13 +351,12 @@
                                               (handle-link ?handle-link-right)
                                               (tip-link t)
                                               (collision-mode ?collision-mode)))
-                       (park-robot)
-                       )))))
+                       (park-robot))))))
            
            (park-robot))
           ((equal skip-open-shelf T) 
            (print "Skipping sequence, shelf door wont be opened.")))
-    ;;(break)
+    
     
     (cond ((equal skip-shelf-perception NIL)
            ;;Perceive the contents of the shelf.
@@ -416,7 +415,6 @@
         (dotimes (n max-objects)
           ;;Pick up the next best object in the list.
           (let*  ((?collision-mode collision-mode)
-                  ;;HARDCODED
                   (?object-size (cl-tf2::make-3d-vector 0.06 0.145 0.215));;(extract-size ?current-object))
                   (?object-height 0.23)
                   ;;DYNAMIC Elements
@@ -481,8 +479,16 @@
 
 
 
-(defun open-drawer-test () ;;2.92 // 3.26
-  (let ((?pose (cl-tf:make-pose-stamped "map" 0.0  (cl-tf:make-3d-vector 3.20 0.19 0.84) (cl-tf:make-quaternion 0 0 0 1))))
+(defun open-drawer-test () ;;2.92 // 3.26 (cl-tf:make-3d-vector 3.20 0.21 0.84)
+  (let (  (?pose (make-pose-stamped-from-knowledge-result (with-knowledge-result (result)
+      `(and ("has_urdf_name" object "shelf:shelf:shelf_door_left:handle")
+            ("object_pose" object result))
+    result)))) ;;(get-pick-up-pose (second (sort-handles (get-handles))))) 
+
+          ;; (cl-tf:make-pose-stamped "map" 0.0  (cl-tf:make-3d-vector 3.25 0.21 0.84) (cl-tf:make-quaternion 0 0 0 1))))
+
+
+          
     
   
   (prepare-robot)
@@ -493,7 +499,7 @@
 
     (exe:perform (desig:an action
                            (type opening-door)
-                           (joint-angle -1.1)
+                           (joint-angle -0.7)
                            (handle-pose ?pose)
                            (handle-link "iai_kitchen/shelf:shelf:shelf_door_left:handle")
                            (tip-link t)
