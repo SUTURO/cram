@@ -511,8 +511,6 @@
                                    ;;Park robot
                                    (su-demos::prepare-robot)
 
-                                   ;;(break)
-             
                                    ;;Move to the original position
                                    (su-demos::with-knowledge-result (result)
                                        `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
