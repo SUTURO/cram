@@ -376,7 +376,7 @@
                                               ))
     (property ?designator (:type :gripper))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
-               (equal ?collision-mode :allow-hand)))
+               (equal ?collision-mode :allow-all)))
      (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
                (equal ?collision-object-b nil)))
      (once (or (desig:desig-prop ?designator (:collision-object-b-link

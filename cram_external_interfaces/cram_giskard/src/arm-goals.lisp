@@ -210,8 +210,6 @@
 (defun make-sequence-constraint (motion-sequence
                                      &key avoid-collisions-not-much)
   "Receives parameters used by manipulation. Creates Constraint of the type PlaceObject which is a classname inside the manipulation code, which is responsible for 'placing'"
-  (print motion-sequence)
-  ;;(break)
   (roslisp:make-message
    'giskard_msgs-msg:constraint
    :type

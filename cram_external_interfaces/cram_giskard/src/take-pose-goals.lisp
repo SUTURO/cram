@@ -50,6 +50,7 @@
                                          arm-roll
                                          wrist-flex
                                          wrist-roll)
+  
     (make-giskard-goal
      :constraints (list
                    (make-take-pose-constraint pose-keyword head-pan head-tilt arm-lift arm-flex arm-roll wrist-flex wrist-roll))

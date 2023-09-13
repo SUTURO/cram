@@ -94,17 +94,17 @@
         (and (format "WARNING: Please specify the objectname.~%")
              (fail)))
 
-    (once (or (desig:desig-prop ?designator (:object-size ?object-size))
-                  (lisp-fun su-real::get-object-size ?object-name
-                            ?object-size)))
+    (or (desig:desig-prop ?designator (:object-size ?object-size))
+        (lisp-fun su-real::get-object-size ?object-name
+                  ?object-size))
    
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
               (lisp-fun su-real::get-goal-pose ?object-name
                         ?goal-pose)))
     
-    (and (once (or (desig:desig-prop ?designator (:from-above ?from-above))
-                   (lisp-fun su-real::get-from-above ?object-name
-                             ?from-above)))
+    (and (or (desig:desig-prop ?designator (:from-above ?from-above))
+             (lisp-fun su-real::get-from-above ?object-name
+                       ?from-above))
          (once (or (desig:desig-prop ?designator (:neatly ?neatly))
                    (lisp-fun su-real::get-neatly ?object-name
                              ?neatly)))

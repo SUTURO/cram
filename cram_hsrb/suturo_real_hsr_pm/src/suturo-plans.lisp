@@ -208,8 +208,7 @@
       (?inside ;; inside could be done with cram "location" in the future, but can sth both be a
        ;; location and an object? (because of the cup mentioned earlier, which then would function
        ;; as an object as well as a location)
-       (let ((?context `(("action" . "placing")))
-             (?height (cl-tf:z (su-demos::get-target-size-clean-up ?inside))))
+       (let ((?height (cl-tf:z (su-demos::get-target-size-clean-up ?inside))))
           (exe:perform (desig:a motion
                                 (type :vertical-motion)
                                 (collision-mode ?collision-mode)
@@ -219,6 +218,7 @@
       ((assoc "neatly" ?context :test #'string=)
         (exe:perform (desig:a motion
                               (type placing)
+                              (context ?context)
                               (collision-mode ?collision-mode)
                               (goal-pose ?goal-pose)))))
 
@@ -250,6 +250,7 @@
     (when (assoc "neatly" ?context :test #'string=)
       (exe:perform (desig:a motion
                             (type placing)
+                            (context ?context)
                             (collision-mode ?collision-mode)
                             (goal-pose ?goal-pose))))
     
@@ -679,10 +680,17 @@
   "cube")
 
 (defun get-from-above (name)
-  T)
+  (cond
+    ((search "Cereal" name) nil)
+    ((search "Milk" name) nil)
+    ((or (search "Spoon" name)
+         (search "Fork" name))
+     T)
+    ((search "Bowl" name) T)))
 
 (defun get-neatly (name)
-  T)
+  (break)
+  nil)
 
 (defun get-frame (name)
   "bowl_frame")

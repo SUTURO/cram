@@ -289,8 +289,23 @@
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) (third (second result)))
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
-  )
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
+
+;;@author Felix Krause
+(defun make-pose-stamped-from-knowledge-result-table-right (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (- (second (second result)) 0.5) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
+
+;;@author Felix Krause
+(defun make-pose-stamped-from-knowledge-result-table-left (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (+ (second (second result)) 0.5) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
 ;;@author Felix Krause
 (defun make-pose-stamped-from-knowledge-result-for-smallies (result)
@@ -602,9 +617,9 @@
 
 
 
-(defun human-assist (talk)
+(defun human-assist (talk &key (object nil))
   ;little bit different, talk, then move you arm, then open gripper otherwise she hits herself sometimes
-  (talk-request "I will need some help from the human,i will now move my arm, please be care: " talk)
+  (talk-request "I will need some help from the human,i will now move my arm, please be careful: " talk)
   ;;this can also be used for bowl
   (cpl:seq
     (wait-robot)
@@ -613,8 +628,10 @@
                           (:open-close :open)
                           (effort 0.1))))
   ;;todo what if we dont find the plate?
-  (talk-request "Please give me the Plate,
-When you are ready poke the white part of my hand." talk)
+  (talk-request "When the object is between my fingers, push down my hand." talk)
+  (talk-request "Please give me the object: " talk :current-knowledge-object object)
+;;   (talk-request "Please give me the ~a,
+;; When you are ready poke the white part of my hand." talk)
   
   ;;waiting for human
     (exe:perform
@@ -705,37 +722,6 @@ When you are ready poke the white part of my hand." talk)
 ;;;;;;;;;;;;
 ;; VANESSA -----------------------------------------------------------------END
 
-
-;;;;;;;;;;; VIZBOX ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;@author Tim Rienits
-;; Print on VizBox what the Robot is saying.
-(defun vizbox-robot-says (message)
-
-    (let ((pub (roslisp:advertise "robot_text" "std_msgs/String")))
-        (sleep 1)
-        (roslisp:publish-msg pub :data (format nil message)))
-  )
-
-;;@author Tim Rienits
-;; Print on VizBox what the robot has heard the operator say.
-(defun vizbox-robot-heard (message)
-  
-    (let ((pub (roslisp:advertise "operator_text" "std_msgs/String")))
-
-        (sleep 1)
-        (roslisp:publish-msg pub :data (format nil message)))
-  )
-
-;;@author Tim Rienits
-;; Sets the current step of the plan to new_step (starts at 0).
-(defun vizbox-set-step (new_step)
-
-    (let ((pub (roslisp:advertise "challenge_step" "std_msgs/UInt32")))
-
-        (sleep 1)
-        (roslisp:publish-msg pub :data new_step))
-  )
 
 ;; Luca
 
