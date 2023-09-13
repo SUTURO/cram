@@ -462,13 +462,104 @@
                                        (goal-pose ?reaching-pose)
                                        (context ?context))))))
 
-    ;;(break)
-    
     ;; (exe:perform (desig:a motion
     ;;                       (type gripper)
     ;;                       (gripper-state "close")))
 
-    (close-gripper :effort 1)
+
+(cpl:with-retry-counters ((grasping-retries 1))
+               (cpl:with-failure-handling
+                   ((common-fail:gripper-closed-completely (e)
+                      (roslisp:ros-warn (suturo-reaching reaching)
+                                        "Some manipulation failure happened: ~a"
+                                        e)
+                      (cpl:do-retry grasping-retries
+                        
+                        (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :gripping)) 
+                        (print ?reaching-pose)
+                        (su-real::open-gripper :effort 1)
+                        (cpl:with-retry-counters ((bumping-retries 3))
+                          (cpl:with-failure-handling
+                              ((common-fail:environment-manipulation-goal-not-reached (e)
+                                 (roslisp:ros-warn (suturo-reaching reaching)
+                                                   "Some manipulation failure happened: ~a"
+                                                   e)
+                                 (cpl:do-retry bumping-retries
+
+                                   (print "Bumped into door!")
+                                   (print base-distance)
+                                   (print ?reaching-pose)
+                                   (setf base-distance (get-distance-to-move base-distance :bumping))
+                                   (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+                                   (print ?reaching-pose)
+                                   (print base-distance)
+                                   (exe:perform (desig:a motion
+                                                         (type :retracting)
+                                                         (collision-mode ?collision-mode)
+                                                         (collision-object-b ?collision-object-b)
+                                                         (collision-object-b-link ?collision-object-b-link)
+                                                         (collision-object-a ?collision-object-a)
+                                                         (allow-base ?move-base)
+                                                         (prefer-base ?prefer-base)
+                                                         (straight-line ?straight-line)
+                                                         (align-planes-left ?align-planes-left)
+                                                         (align-planes-right ?align-planes-right)
+                                                         (precise-tracking ?precise-tracking)
+                                                         (tip-link t)))
+
+
+                                   ;;Park robot
+                                   (su-demos::prepare-robot)
+
+                                   ;;(break)
+             
+                                   ;;Move to the original position
+                                   (su-demos::with-knowledge-result (result)
+                                       `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                                             ("object_rel_pose" object "perceive" result))
+                                     (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+                                   (sleep 5)
+                                   (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+                                   (cpl:retry)
+                                   )))
+               
+                            (let ((?context `(("action" . "door-opening"))))
+                              (exe:perform (desig:a motion
+                                                    (type reaching)
+                                                    (collision-mode ?collision-mode)
+                                                    (collision-object-b ?collision-object-b)
+                                                    (collision-object-b-link ?collision-object-b-link)
+                                                    (collision-object-a ?collision-object-a)
+                                                    (allow-base ?move-base)
+                                                    (prefer-base ?prefer-base)
+                                                    (straight-line ?straight-line)
+                                                    (align-planes-left ?align-planes-left)
+                                                    (align-planes-right ?align-planes-right)
+                                                    (precise-tracking ?precise-tracking)
+                                                    (goal-pose ?reaching-pose)
+                                                    (context ?context))))))
+
+                        (cpl:retry))))
+												     
+                 (cpl:pursue
+                   (cpl:seq
+                     (su-real::close-gripper :effort 1)
+                     (sleep 2)
+                     (su-demos::call-text-to-speech-action "Fail to grasp the handle")
+                     (cpl:fail 'common-fail:gripper-closed-completely
+                               :description "Did not correctly grasp"))
+                   (cpl:seq
+                     (exe:perform
+                      (desig:an action
+                                (type monitoring-joint-state)
+                                (joint-name "hand_l_proximal_joint")))    
+                     (sleep 1)))))
+
+
+
+
+    
+
 
     (sleep 2.0)
 
@@ -491,9 +582,7 @@
              (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :slipping))
              (print ?reaching-pose)
              ;;Open gripper
-             (exe:perform (desig:a motion
-                                   (type gripper)
-                                   (gripper-state "neutral")))
+             (open-gripper :effort 1)
 
              ;;Park robot
              (su-demos::prepare-robot)
@@ -579,7 +668,26 @@
              ;;                       (type gripper)
              ;;                       (collision-mode ?collision-mode)
              ;;                       (gripper-state "close")))
-             (close-gripper :effort 1)
+
+
+                                          
+                                            (cpl:pursue
+                                              (cpl:seq
+                                                (su-real::close-gripper :effort 1)
+                                                (sleep 2)
+                                                (su-demos::call-text-to-speech-action "Fail to grasp the handle")
+                                                (cpl:fail 'common-fail:gripper-closed-completely
+                                                          :description "Did not correctly grasp"))
+                                                (cpl:seq
+                                                  (exe:perform
+                                                   (desig:an action
+                                                             (type monitoring-joint-state)
+                                                             (joint-name "hand_l_proximal_joint")))
+                  
+                                                  (sleep 2)
+                                                  (su-demos::call-text-to-speech-action "Grasped the handle")))
+
+
            
              
              (cpl:retry)
@@ -615,7 +723,19 @@
 ;; @author Felix Krause
 (defun modify-pose (pose distance case)
   (case case
-    ((or :slipping :gripping)
+    (:gripping 
+     (cl-tf::copy-pose-stamped
+      pose
+      :origin
+      (let ((vector (cl-tf::origin pose)))
+        (cl-tf::copy-3d-vector
+         vector
+         :x (cl-tf::x vector) 
+         :y (+ (cl-tf::y vector) 0.01) 
+         :z (cl-tf::z vector)))
+      :orientation
+      (cl-tf::orientation pose)))
+    (:slipping 
      (cl-tf::copy-pose-stamped
       pose
       :origin

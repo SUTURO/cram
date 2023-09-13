@@ -388,7 +388,7 @@
           ((equal skip-shelf-perception T)
            (print "Skipping sequence, shelf contents wont be perceived.")))
 
-
+    
     ;;Move to the table to a perceive pose.
     (with-knowledge-result (result)
         `(and ("has_urdf_name" object ,table)
@@ -528,7 +528,7 @@
                              ("object_rel_pose" object "perceive" result))
                      (make-pose-stamped-from-knowledge-result result)))) 
 
-      (move-hsr (modify-pose-q ?pose 0 0 0.704 0.71))
+      ;;(move-hsr (modify-pose-q ?pose 0 0 0.704 0.71))
     
       (move-hsr (modify-pose-q ?pose 0 0 0.704 -0.71))
 
