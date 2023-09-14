@@ -352,7 +352,7 @@
                           (precise-tracking ?precise-tracking)))))
 
 
-;; @author Luca Krohm
+;; @author Felix Krause, Luca Krohm
 ;; @TODO failurehandling
 ;; sequence doesnt make sense yet
 (defun open-door (&key
@@ -375,193 +375,168 @@
                  ?align-planes-left ?align-planes-right))
 
   (let ((total-retries 0)
-        (base-distance 0.02)
-        (?reaching-pose ?handle-pose))
+        (base-distance 0.05)
+        (?reaching-pose ?handle-pose)
+        (?collision-mode ?collision-mode))
     
   (exe:perform (desig:a motion
                         (type gripper)
                         (gripper-state "neutral")))
 
-  ;; (let ((?context `(("action" . "door-opening"))))
-  ;;   (exe:perform (desig:a motion
-  ;;                         (type reaching)
-  ;;                         (collision-mode ?collision-mode)
-  ;;                         (collision-object-b ?collision-object-b)
-  ;;                         (collision-object-b-link ?collision-object-b-link)
-  ;;                         (collision-object-a ?collision-object-a)
-  ;;                         (allow-base ?move-base)
-  ;;                         (prefer-base ?prefer-base)
-  ;;                         (straight-line ?straight-line)
-  ;;                         (align-planes-left ?align-planes-left)
-  ;;                         (align-planes-right ?align-planes-right)
-  ;;                         (precise-tracking ?precise-tracking)
-  ;;                         (object-name ?handle-link)
-  ;;                         (goal-pose ?reaching-pose)
-    ;;                         (context ?context))))
 
-
-
-(cpl:with-retry-counters ((bumping-retries 3))
-  (cpl:with-failure-handling
-      ((common-fail:environment-manipulation-goal-not-reached (e)
-         (roslisp:ros-warn (suturo-reaching reaching)
-                           "Some manipulation failure happened: ~a"
-                           e)
-         (cpl:do-retry bumping-retries
-
-           (print "Bumped into door!")
-           (print base-distance)
-           (print ?reaching-pose)
-           (setf base-distance (get-distance-to-move base-distance :bumping))
-           (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
-           (print ?reaching-pose)
-           (print base-distance)
-           (exe:perform (desig:a motion
-                                 (type :retracting)
-                                 (collision-mode ?collision-mode)
-                                 (collision-object-b ?collision-object-b)
-                                 (collision-object-b-link ?collision-object-b-link)
-                                 (collision-object-a ?collision-object-a)
-                                 (allow-base ?move-base)
-                                 (prefer-base ?prefer-base)
-                                 (straight-line ?straight-line)
-                                 (align-planes-left ?align-planes-left)
-                                 (align-planes-right ?align-planes-right)
-                                 (precise-tracking ?precise-tracking)
-                                 (tip-link t)))
-
-
-           ;;Park robot
-           (su-demos::prepare-robot)
-
-           ;;(break)
-             
-           ;;Move to the original position
-           (su-demos::with-knowledge-result (result)
-               `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                     ("object_rel_pose" object "perceive" result))
-             (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-           (sleep 5)
-           (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
-           (cpl:retry)
-           )))
+    (cpl:with-retry-counters ((bumping-retries 4))
+      (cpl:with-failure-handling
+          ((common-fail:environment-manipulation-goal-not-reached (e)
+             (roslisp:ros-warn (suturo-reaching reaching)
+                               "Some manipulation failure happened: ~a"
+                               e)
+             (cpl:do-retry bumping-retries
+               (print "Bumped into door!")
+               (print base-distance)
+               (print ?reaching-pose)
+               (setf base-distance (get-distance-to-move base-distance :bumping))
+               (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+               (print ?reaching-pose)
+               (print base-distance)
+               (exe:perform (desig:a motion
+                                     (type :retracting)
+                                     (collision-mode ?collision-mode)
+                                     (collision-object-b ?collision-object-b)
+                                     (collision-object-b-link ?collision-object-b-link)
+                                     (collision-object-a ?collision-object-a)
+                                     (allow-base ?move-base)
+                                     (prefer-base ?prefer-base)
+                                     (straight-line ?straight-line)
+                                     (align-planes-left ?align-planes-left)
+                                     (align-planes-right ?align-planes-right)
+                                     (precise-tracking ?precise-tracking)
+                                     (tip-link t)))
+               ;;Park robot
+               (su-demos::prepare-robot)
                
-               (let ((?context `(("action" . "door-opening"))))
-                 (exe:perform (desig:a motion
-                                       (type reaching)
-                                       (collision-mode ?collision-mode)
-                                       (collision-object-b ?collision-object-b)
-                                       (collision-object-b-link ?collision-object-b-link)
-                                       (collision-object-a ?collision-object-a)
-                                       (allow-base ?move-base)
-                                       (prefer-base ?prefer-base)
-                                       (straight-line ?straight-line)
-                                       (align-planes-left ?align-planes-left)
-                                       (align-planes-right ?align-planes-right)
-                                       (precise-tracking ?precise-tracking)
-                                       (goal-pose ?reaching-pose)
-                                       (context ?context))))))
-
-    ;; (exe:perform (desig:a motion
-    ;;                       (type gripper)
-    ;;                       (gripper-state "close")))
-
-
-(cpl:with-retry-counters ((grasping-retries 1))
-               (cpl:with-failure-handling
-                   ((common-fail:gripper-closed-completely (e)
-                      (roslisp:ros-warn (suturo-reaching reaching)
-                                        "Some manipulation failure happened: ~a"
-                                        e)
-                      (cpl:do-retry grasping-retries
-                        
-                        (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :gripping)) 
-                        (print ?reaching-pose)
-                        (su-real::open-gripper :effort 1)
-                        (cpl:with-retry-counters ((bumping-retries 3))
-                          (cpl:with-failure-handling
-                              ((common-fail:environment-manipulation-goal-not-reached (e)
-                                 (roslisp:ros-warn (suturo-reaching reaching)
-                                                   "Some manipulation failure happened: ~a"
-                                                   e)
-                                 (cpl:do-retry bumping-retries
-
-                                   (print "Bumped into door!")
-                                   (print base-distance)
-                                   (print ?reaching-pose)
-                                   (setf base-distance (get-distance-to-move base-distance :bumping))
-                                   (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
-                                   (print ?reaching-pose)
-                                   (print base-distance)
-                                   (exe:perform (desig:a motion
-                                                         (type :retracting)
-                                                         (collision-mode ?collision-mode)
-                                                         (collision-object-b ?collision-object-b)
-                                                         (collision-object-b-link ?collision-object-b-link)
-                                                         (collision-object-a ?collision-object-a)
-                                                         (allow-base ?move-base)
-                                                         (prefer-base ?prefer-base)
-                                                         (straight-line ?straight-line)
-                                                         (align-planes-left ?align-planes-left)
-                                                         (align-planes-right ?align-planes-right)
-                                                         (precise-tracking ?precise-tracking)
-                                                         (tip-link t)))
-
-
-                                   ;;Park robot
-                                   (su-demos::prepare-robot)
-
-                                   ;;Move to the original position
-                                   (su-demos::with-knowledge-result (result)
-                                       `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                                             ("object_rel_pose" object "perceive" result))
-                                     (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-                                   (sleep 5)
-                                   (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
-                                   (cpl:retry)
-                                   )))
-               
-                            (let ((?context `(("action" . "door-opening"))))
-                              (exe:perform (desig:a motion
-                                                    (type reaching)
-                                                    (collision-mode ?collision-mode)
-                                                    (collision-object-b ?collision-object-b)
-                                                    (collision-object-b-link ?collision-object-b-link)
-                                                    (collision-object-a ?collision-object-a)
-                                                    (allow-base ?move-base)
-                                                    (prefer-base ?prefer-base)
-                                                    (straight-line ?straight-line)
-                                                    (align-planes-left ?align-planes-left)
-                                                    (align-planes-right ?align-planes-right)
-                                                    (precise-tracking ?precise-tracking)
-                                                    (goal-pose ?reaching-pose)
-                                                    (context ?context))))))
-
-                        (cpl:retry))))
-												     
-                 (cpl:pursue
-                   (cpl:seq
-                     (su-real::close-gripper :effort 1)
-                     (sleep 2)
-                     (su-demos::call-text-to-speech-action "Fail to grasp the handle")
-                     (cpl:fail 'common-fail:gripper-closed-completely
-                               :description "Did not correctly grasp"))
-                   (cpl:seq
-                     (exe:perform
-                      (desig:an action
-                                (type monitoring-joint-state)
-                                (joint-name "hand_l_proximal_joint")))    
-                     (sleep 1)))))
-
-
-
-
+               ;;Move to the original position
+               (su-demos::with-knowledge-result (result)
+                   `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                         ("object_rel_pose" object "perceive" result))
+                 (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+               (sleep 2)
+               (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+               (cpl:retry))))
+        
+        (let ((?context `(("action" . "door-opening"))))
+          (exe:perform (desig:a motion
+                                (type reaching)
+                                (collision-mode ?collision-mode)
+                                (collision-object-b ?collision-object-b)
+                                (collision-object-b-link ?collision-object-b-link)
+                                (collision-object-a ?collision-object-a)
+                                (allow-base ?move-base)
+                                (prefer-base ?prefer-base)
+                                (straight-line ?straight-line)
+                                (align-planes-left ?align-planes-left)
+                                (align-planes-right ?align-planes-right)
+                                (precise-tracking ?precise-tracking)
+                                (goal-pose ?reaching-pose)
+                                (context ?context))))))
     
+    ;; (cpl:with-retry-counters ((grasping-retries 4))
+    ;;   (cpl:with-failure-handling
+    ;;       ((common-fail:gripper-closed-completely (e)
+    ;;          (roslisp:ros-warn (suturo-reaching reaching)
+    ;;                            "Some manipulation failure happened: ~a"
+    ;;                            e)
+    ;;                   (cpl:do-retry grasping-retries
+    ;;                     (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping)) 
+    ;;                     (print ?reaching-pose)
+    ;;                     (su-real::open-gripper :effort 1)
+    ;;                     (cpl:with-retry-counters ((bumping-retries 4))
+    ;;                       (cpl:with-failure-handling
+    ;;                           ((common-fail:environment-manipulation-goal-not-reached (e)
+    ;;                              (roslisp:ros-warn (suturo-reaching reaching)
+    ;;                                                "Some manipulation failure happened: ~a"
+    ;;                                                e)
+    ;;                              (cpl:do-retry bumping-retries
+    ;;                                (print "Bumped into door!")
+    ;;                                (print base-distance)
+    ;;                                (print ?reaching-pose)
+    ;;                                (setf base-distance (get-distance-to-move base-distance :bumping))
+    ;;                                (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+    ;;                                (print ?reaching-pose)
+    ;;                                (print base-distance)
+    ;;                                (exe:perform (desig:a motion
+    ;;                                                      (type :retracting)
+    ;;                                                      (collision-mode ?collision-mode)
+    ;;                                                      (collision-object-b ?collision-object-b)
+    ;;                                                      (collision-object-b-link ?collision-object-b-link)
+    ;;                                                      (collision-object-a ?collision-object-a)
+    ;;                                                      (allow-base ?move-base)
+    ;;                                                      (prefer-base ?prefer-base)
+    ;;                                                      (straight-line ?straight-line)
+    ;;                                                      (align-planes-left ?align-planes-left)
+    ;;                                                      (align-planes-right ?align-planes-right)
+    ;;                                                      (precise-tracking ?precise-tracking)
+    ;;                                                      (tip-link t)))
+
+    ;;                                ;;Park robot
+    ;;                                (su-demos::prepare-robot)
+
+    ;;                                ;;Move to the original position
+    ;;                                (su-demos::with-knowledge-result (result)
+    ;;                                    `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+    ;;                                          ("object_rel_pose" object "perceive" result))
+    ;;                                  (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+    ;;                                (sleep 5)
+    ;;                                (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+    ;;                                (cpl:retry))))
 
 
-    (sleep 2.0)
 
-  (cpl:with-retry-counters ((slipping-retries 3))
+    ;;                         (exe:perform (desig:a motion
+    ;;                                               (type :retracting)
+    ;;                                               (collision-mode ?collision-mode)
+    ;;                                               (collision-object-b ?collision-object-b)
+    ;;                                               (collision-object-b-link ?collision-object-b-link)
+    ;;                                               (collision-object-a ?collision-object-a)
+    ;;                                               (allow-base ?move-base)
+    ;;                                               (prefer-base ?prefer-base)
+    ;;                                               (straight-line ?straight-line)
+    ;;                                               (align-planes-left ?align-planes-left)
+    ;;                                               (align-planes-right ?align-planes-right)
+    ;;                                               (precise-tracking ?precise-tracking)
+    ;;                                               (tip-link t)))
+               
+    ;;                         (let ((?context `(("action" . "door-opening"))))
+    ;;                           (exe:perform (desig:a motion
+    ;;                                                 (type reaching)
+    ;;                                                 (collision-mode ?collision-mode)
+    ;;                                                 (collision-object-b ?collision-object-b)
+    ;;                                                 (collision-object-b-link ?collision-object-b-link)
+    ;;                                                 (collision-object-a ?collision-object-a)
+    ;;                                                 (allow-base ?move-base)
+    ;;                                                 (prefer-base ?prefer-base)
+    ;;                                                 (straight-line ?straight-line)
+    ;;                                                 (align-planes-left ?align-planes-left)
+    ;;                                                 (align-planes-right ?align-planes-right)
+    ;;                                                 (precise-tracking ?precise-tracking)
+    ;;                                                 (goal-pose ?reaching-pose)
+    ;;                                                 (context ?context))))))
+
+    ;;                     (cpl:retry))))
+												  
+    ;;              ;; (cpl:pursue
+    ;;              ;;   (cpl:seq
+    ;;              ;;     (su-real::close-gripper :effort 1)
+    ;;              ;;     (sleep 3)
+    ;;              ;;     (cpl:fail 'common-fail:gripper-closed-completely
+    ;;              ;;               :description "Did not correctly grasp"))
+    ;;              ;;   (cpl:seq 
+    ;;              ;;     (exe:perform
+    ;;              ;;      (desig:an action
+    ;;              ;;                (type monitoring-joint-state)
+    ;;              ;;                (joint-name "hand_l_proximal_joint")))))
+    ;;              ))
+
+  (cpl:with-retry-counters ((slipping-retries 5))
     (cpl:with-failure-handling
         ((common-fail:environment-manipulation-goal-not-reached (e)
            (roslisp:ros-warn (suturo-open open-door)
@@ -584,8 +559,6 @@
 
              ;;Park robot
              (su-demos::prepare-robot)
-
-             ;;(break)
              
              ;;Move to the original position
              (su-demos::with-knowledge-result (result)
@@ -632,8 +605,6 @@
                         ;;Park robot
                         (su-demos::prepare-robot)
 
-                        ;;(break)
-             
                         ;;Move to the original position
                         (su-demos::with-knowledge-result (result)
                             `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
@@ -657,39 +628,102 @@
                                          (align-planes-right ?align-planes-right)
                                          (precise-tracking ?precise-tracking)
                                          (goal-pose ?reaching-pose)
-                                         (context ?context))))))
-
-
+                                         (context ?context))))
              
-             ;;Close arm with failure handling
+                 (cpl:with-retry-counters ((grasping-retries 4))
+                   (cpl:with-failure-handling
+                       ((common-fail:gripper-closed-completely (e)
+                          (roslisp:ros-warn (suturo-reaching reaching)
+                                            "Some manipulation failure happened: ~a"
+                                            e)
+                          (cpl:do-retry grasping-retries
+                            (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping)) 
+                            (print ?reaching-pose)
+                            (su-real::open-gripper :effort 1)
+                            (cpl:with-retry-counters ((bumping-retries 4))
+                              (cpl:with-failure-handling
+                                  ((common-fail:environment-manipulation-goal-not-reached (e)
+                                     (roslisp:ros-warn (suturo-reaching reaching)
+                                                       "Some manipulation failure happened: ~a"
+                                                       e)
+                                     (cpl:do-retry bumping-retries
+                                       (print "Bumped into door!")
+                                       (print base-distance)
+                                       (print ?reaching-pose)
+                                       (setf base-distance (get-distance-to-move base-distance :bumping))
+                                       (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping))
+                                       (print ?reaching-pose)
+                                       (print base-distance)
+                                       (exe:perform (desig:a motion
+                                                             (type :retracting)
+                                                             (collision-mode ?collision-mode)
+                                                             (collision-object-b ?collision-object-b)
+                                                             (collision-object-b-link ?collision-object-b-link)
+                                                             (collision-object-a ?collision-object-a)
+                                                             (allow-base ?move-base)
+                                                             (prefer-base ?prefer-base)
+                                                             (straight-line ?straight-line)
+                                                             (align-planes-left ?align-planes-left)
+                                                             (align-planes-right ?align-planes-right)
+                                                             (precise-tracking ?precise-tracking)
+                                                             (tip-link t)))
 
-             ;;                       (type gripper)
-             ;;                       (collision-mode ?collision-mode)
-             ;;                       (gripper-state "close")))
+
+                                       ;;Park robot
+                                       (su-demos::prepare-robot)
+
+                                       ;;Move to the original position
+                                       (su-demos::with-knowledge-result (result)
+                                           `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                                                 ("object_rel_pose" object "perceive" result))
+                                         (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+                                       (sleep 5)
+                                       (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+                                       (cpl:retry)
+                                       )))
 
 
-                                          
-                                            (cpl:pursue
-                                              (cpl:seq
-                                                (su-real::close-gripper :effort 1)
-                                                (sleep 2)
-                                                (su-demos::call-text-to-speech-action "Fail to grasp the handle")
-                                                (cpl:fail 'common-fail:gripper-closed-completely
-                                                          :description "Did not correctly grasp"))
-                                                (cpl:seq
-                                                  (exe:perform
-                                                   (desig:an action
-                                                             (type monitoring-joint-state)
-                                                             (joint-name "hand_l_proximal_joint")))
-                  
-                                                  (sleep 2)
-                                                  (su-demos::call-text-to-speech-action "Grasped the handle")))
-
-
-           
-             
-             (cpl:retry)
-             )))
+                                (exe:perform (desig:a motion
+                                                      (type :retracting)
+                                                      (collision-mode ?collision-mode)
+                                                      (collision-object-b ?collision-object-b)
+                                                      (collision-object-b-link ?collision-object-b-link)
+                                                      (collision-object-a ?collision-object-a)
+                                                      (allow-base ?move-base)
+                                                      (prefer-base ?prefer-base)
+                                                      (straight-line ?straight-line)
+                                                      (align-planes-left ?align-planes-left)
+                                                      (align-planes-right ?align-planes-right)
+                                                      (precise-tracking ?precise-tracking)
+                                                      (tip-link t)))
+               
+                            (let ((?context `(("action" . "door-opening"))))
+                              (exe:perform (desig:a motion
+                                                    (type reaching)
+                                                    (collision-mode ?collision-mode)
+                                                    (collision-object-b ?collision-object-b)
+                                                    (collision-object-b-link ?collision-object-b-link)
+                                                    (collision-object-a ?collision-object-a)
+                                                    (allow-base ?move-base)
+                                                    (prefer-base ?prefer-base)
+                                                    (straight-line ?straight-line)
+                                                    (align-planes-left ?align-planes-left)
+                                                    (align-planes-right ?align-planes-right)
+                                                    (precise-tracking ?precise-tracking)
+                                                    (goal-pose ?reaching-pose)
+                                                    (context ?context)))))) (cpl:retry))))
+												                        (cpl:pursue
+                       (cpl:seq
+                         (su-real::close-gripper :effort 1)
+                         (sleep 3)
+                         (cpl:fail 'common-fail:gripper-closed-completely
+                                   :description "Did not correctly grasp"))
+                       (cpl:seq 
+                         (exe:perform
+                          (desig:an action
+                                    (type monitoring-joint-state)
+                                    (joint-name "hand_l_proximal_joint")))))))))
+             (cpl:retry))))
       
       (exe:perform (desig:a motion
                             (type pulling)
@@ -701,7 +735,8 @@
     (exe:perform (desig:a motion
                           (type gripper)
                           (gripper-state "neutral")))
-  
+
+
     (exe:perform (desig:a motion
                           (type :retracting)
                           (collision-mode ?collision-mode)
@@ -715,7 +750,15 @@
                           (align-planes-left ?align-planes-left)
                           (align-planes-right ?align-planes-right)
                           (precise-tracking ?precise-tracking)
-                          (tip-link t)))))
+                          (tip-link t)))
+
+
+
+
+
+    
+  
+ ))
 
 
 ;; @author Felix Krause
@@ -728,8 +771,8 @@
       (let ((vector (cl-tf::origin pose)))
         (cl-tf::copy-3d-vector
          vector
-         :x (cl-tf::x vector) 
-         :y (+ (cl-tf::y vector) 0.01) 
+         :x (- (cl-tf::x vector) 0.01)
+         :y (cl-tf::y vector) 
          :z (cl-tf::z vector)))
       :orientation
       (cl-tf::orientation pose)))
@@ -764,13 +807,13 @@
 (defun get-distance-to-move (current-distance case)
   (case case
     (:slipping
-     (/ current-distance 1.2)
+     (/ current-distance 1.1)
      )
     (:gripping
      (/ current-distance 1.1)
      )
     (:bumping
-     (/ current-distance 1.1)
+     (/ current-distance 1.05)
      )))
 
 ;; @author Luca Krohm
