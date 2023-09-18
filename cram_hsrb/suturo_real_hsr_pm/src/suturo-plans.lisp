@@ -524,18 +524,18 @@
 
                         (cpl:retry))))
 												  
-                 (cpl:pursue
-                   (cpl:seq
-                     (su-real::close-gripper :effort 1)
-                     (sleep 3)
-                     (cpl:fail 'common-fail:gripper-closed-completely
+                     (cpl:pursue
+                       (cpl:seq
+                         (su-real::close-gripper :effort 1)
+                         (sleep 4)
+                         (cpl:fail 'common-fail:gripper-closed-completely
                                :description "Did not correctly grasp"))
-                   (cpl:seq 
-                     (exe:perform
-                      (desig:an action
-                                (type monitoring-joint-state)
-                                (joint-angle-threshold -0.9)
-                                (joint-name "hand_l_proximal_joint")))))
+                       (cpl:seq 
+                         (exe:perform
+                          (desig:an action
+                                    (type monitoring-joint-state)
+                                    (joint-angle-threshold -0.6)
+                                    (joint-name "hand_l_proximal_joint")))))
                  ))
 
   (cpl:with-retry-counters ((slipping-retries 5))
@@ -714,18 +714,18 @@
                                                     (precise-tracking ?precise-tracking)
                                                     (goal-pose ?reaching-pose)
                                                     (context ?context)))))) (cpl:retry))))
-												                     (cpl:pursue
-                   (cpl:seq
-                     (su-real::close-gripper :effort 1)
-                     (sleep 3)
-                     (cpl:fail 'common-fail:gripper-closed-completely
+                     (cpl:pursue
+                       (cpl:seq
+                         (su-real::close-gripper :effort 1)
+                         (sleep 4)
+                         (cpl:fail 'common-fail:gripper-closed-completely
                                :description "Did not correctly grasp"))
-                   (cpl:seq 
-                     (exe:perform
-                      (desig:an action
-                                (type monitoring-joint-state)
-                                (joint-angle-threshold -0.9)
-                                (joint-name "hand_l_proximal_joint")))))
+                       (cpl:seq 
+                         (exe:perform
+                          (desig:an action
+                                    (type monitoring-joint-state)
+                                    (joint-angle-threshold -0.6)
+                                    (joint-name "hand_l_proximal_joint"))))) 
 
 
 
