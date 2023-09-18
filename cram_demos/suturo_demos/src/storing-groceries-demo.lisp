@@ -421,6 +421,7 @@
                   (?next-object (get-next-object-storing-groceries))
                   (?next-pick-up-pose (get-pick-up-pose ?next-object))
                   (?next-place-pose (get-place-pose-in-shelf ?next-object))
+                  (?from-above NIL)
                   ;;HARDCODED/OLD PLACE POSES
                   ;; (?place-pose (pop ?place-poses))
                   ;; (?current-object (pop ?list-of-objects))
@@ -434,7 +435,7 @@
                                    (type :picking-up)
                                    (goal-pose ?next-pick-up-pose)
                                    (object-size ?object-size)
-                                   (sequence-goal ?sequence-goals)
+                                   (frome-above ?from-above)
                                    (collision-mode ?collision-mode)))
             
             
@@ -455,7 +456,7 @@
                                    (object-height ?object-height)
                                    (object-size ?object-size)
                                    (sequence-goal ?sequence-goals)
-                                   (from-above NIL)
+                                   (straight-line T)
                                    (neatly ?neatly)
                                    (collision-mode ?collision-mode)))
             
@@ -550,7 +551,7 @@
       :z c
       :w d))))
 
-
+;;@author Felix Krause
 (defun prepare-robot ()
   "Open door pose"
   (exe:perform (desig:an action
