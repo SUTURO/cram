@@ -236,7 +236,7 @@
                                (:sequence-goal ?sequence-goal))
                       ?resolved-action-designator))
 
-
+  ;; @author Luca Krohm
   (<- (desig:action-grounding ?designator (su-real:sequence-goal ?resolved-action-designator))
     (spec:property ?designator (:type :sequence-goal))
     (desig:desig-prop ?designator (:action ?action))
@@ -317,11 +317,15 @@
              (once (or (desig:desig-prop ?designator (:object-shape ?object-shape))
                        (lisp-fun su-real::get-object-shape ?object-name
                                  ?object-shape)))
+             (once (or (desig:desig-prop ?designator (:vertical-align ?vertical-align))
+                       (lisp-fun su-real::get-vertical-align ?object-name
+                                 ?vertical-align)))
              
              (lisp-fun su-real::generate-context ?action ?motions :from-above ?from-above
                                                                   :neatly ?neatly
                                                                   :object-type ?object-type
                                                                   :object-shape ?object-shape
+                                                                  :vertical-align ?vertical-align
                                                                   ?context))
         (equal ?context nil))
 
@@ -341,6 +345,7 @@
                                (:collision-mode ?collision-mode))
                       ?resolved-action-designator))
 
+  ;; @author Luca Krohm
   (<- (action-grounding ?designator (su-real:take-pose ?resolved-action-designator))
     (spec:property ?designator (:type :taking-pose))
     (once (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))

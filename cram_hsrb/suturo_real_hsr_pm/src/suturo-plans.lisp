@@ -251,6 +251,7 @@
       (exe:perform (desig:a motion
                             (type placing)
                             (context ?context)
+                            (object-size ?object-size)
                             (collision-mode ?collision-mode)
                             (goal-pose ?goal-pose))))
     
@@ -439,7 +440,7 @@
                     (object-name ?target-name)))))))
 
 
-
+;; @author Luca Krohm
 (defun sequence-goal (&key
                         ((:motion-sequence ?motion-sequence))
                         ((:collision-mode ?collision-mode))
@@ -450,6 +451,7 @@
                         (collision-mode ?collision-mode)
                         (motion-sequence ?motion-sequence))))
 
+;; @author Luca Krohm
 (defun take-pose (&key
                     ((:pose-keyword ?pose-keyword))
                     ((:head-pan ?head-pan))
@@ -495,11 +497,12 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;; HELPER FUNCTIONS
-
+;; @author Luca Krohm
 (defun get-attributes (motion)
   (case motion
     (:aligning-height (list :context :goal-pose :object-name))
     (:reaching (list :context :goal-pose :object-name :object-size))
+    (:placing (list :context :goal-pose :object-name :object-size))
     (:vertical-motion (list :context :distance))
     (:retracting (list :object-name :reference-frame))
     (:tilting (list :tilt-direction :tilt-angle))
@@ -507,10 +510,12 @@
     (:taking-pose (list :pose-keyword))
     (otherwise (error "~a is not a valid keyword" motion))))
 
+;; @author Luca Krohm
 (defun rel-context (motion)
   (case motion
-    (:aligning-height (list :from-above))
-    (:reaching (list :object-type :object-shape :from-above))
+    (:aligning-height (list :from-above :vertical-align))
+    (:reaching (list :object-type :object-shape :from-above :vertical-align))
+    (:placing (list :from-above :vertical-align))
     (:vertical-motion (list :from-above))
     (:retracting (list ))
     (:tilting (list ))
@@ -518,9 +523,11 @@
     (:taking-pose (list ))
     (otherwise (error "~a is not a valid keyword" motion))))
 
+;; @author Luca Krohm
 (defun get-all-attributes (motion-list)
   (remove-duplicates (alexandria:flatten (mapcar #'get-attributes motion-list))))
 
+;; @author Luca Krohm
 (defun generate-motion-sequence (motions context &rest args &key
                                                               goal-pose
                                                               object-name
@@ -540,6 +547,7 @@
       (let* ((motion-name (case motion
                             (:aligning-height "AlignHeight")
                             (:reaching "Reaching")
+                            (:placing "Placing")
                             (:vertical-motion "VerticalMotion")
                             (:retracting "Retracting")
                             (:tilting "Tilting")
@@ -556,18 +564,20 @@
         (push (intern (giskard::alist->json-string `((,motion-name . ,attr-list)))) ?motion-sequence)))
     (setf ?motion-sequence (coerce (reverse ?motion-sequence) 'vector))))
 
-
+;; @author Luca Krohm
 (defun keyword-to-giskard-param (key)
   (let ((str (string-downcase key)))
     (setf str (substitute #\_ #\- str))
     str))
 
+;; @author Luca Krohm
 (defun generate-context (action motions &rest arguments &key
-                                                  from-above
-                                                  neatly
-                                                  object-type
-                                                  object-shape)
-  (declare (ignore from-above neatly object-type object-shape))
+                                                          from-above
+                                                          neatly
+                                                          object-type
+                                                          object-shape
+                                                          vertical-align)
+  (declare (ignore from-above neatly object-type object-shape vertical-align))
   (setf arguments (remove-nil arguments))
   (labels ((parse-content (cont)
              (etypecase cont
@@ -587,30 +597,34 @@
                        attr-list)))))
 
     (typecase motions
-      (list (remove nil (mapcar (lambda (motion)
-                                   (let ((args (remove-if (lambda (arg)
-                                                            (not (member (car arg) (rel-context motion))))
-                                                          arguments)))
-                                     (when (rel-context motion)
-                                       (cons motion (reverse (gen-context action args))))))
-                                 motions)))
+      (list (remove nil (mapcar
+                         (lambda (motion)
+                           (let ((args (remove-if (lambda (arg)
+                                                    (not (member (car arg) (rel-context motion))))
+                                                  arguments)))
+                             (when (rel-context motion)
+                               (cons motion (reverse (gen-context action args))))))
+                         motions)))
       (keyword (reverse (gen-context action arguments))))))
   
-
+;; @author Luca Krohm
 (defun to-giskard-msg-type (param)
   (case param
     (:from-above "manipulation_msgs/ContextFromAbove")
     (:neatly "manipulation_msgs/ContextNeatly")
     (:object-type "manipulation_msgs/ContextObjectType")
     (:object-shape "manipulation_msgs/ContextObjectShape")
+    (:vertical-align "manipulation_msgs/ContextVerticalAlign")
     (otherwise (error "Unknown parameter: ~a" param))))
 
+;; @author Luca Krohm
 (defun remove-nil (list)
   "Remove elements with nil second element and convert to cons cells."
   (loop for (key value) on list by #'cddr
         when value
-        collect (cons key value)))
+          collect (cons key value)))
 
+;; @author Luca Krohm
 (defun generate-alist (alist)
   (typecase (cdr alist)
     (cl-tf:3d-vector `(,(keyword-to-giskard-param (car alist))
@@ -621,7 +635,7 @@
                                ("message" . ,(giskard::to-hash-table (cdr alist))))))
     (t `(,(keyword-to-giskard-param (car alist)) . ,(cdr alist)))))
 
-
+;; @author Luca Krohm
 (defmethod yason::encode ((symbol symbol) &optional (stream *standard-output*))
   (let ((string (string symbol)))
     (loop for char across string do
@@ -638,6 +652,7 @@
     (print "This the the get-goal-pose function in suturo-plans, which was called because you did not specify a goal pose")
   
   (print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+  (break)
   (cond
       ((search "Cereal" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
@@ -693,52 +708,11 @@
   nil)
 
 (defun get-frame (name)
-  "bowl_frame")
+  (su-demos::with-knowledge-result (frame)
+      `("object_shape_workaround" ,name frame _ _ _)
+    frame))
 
 
 
-(defun motions->sequence-desig (motions)
-  "Receives a motion list in the form of '(:some :motion :keywords :like :reaching), then generates a sequence goal designator which is ready to be copy and pasted"
-  (let* ((attribs (get-all-attributes motions))
-         (motion-string (string-downcase (format nil ":~{~a~^ :~}" motions)))
-         (info "Copy and paste the following designator into your code and adjust the variables where needed:")
-         (des-str '("(exe:perform"
-                    "(desig:an action"
-                    "(type sequence-goal)"
-                    "(action ?action)"))
-         (att-str (mapcar (lambda (attr)
-                             (string-downcase (format nil "(~a ?~a)" attr attr)))
-                          (remove :context attribs)))
-         (mot-str (push (format nil "(motions (~a))" motion-string) att-str)))
-    (format t "~a~%" info)
-    (format t "~{~%~a~^ ~}" des-str)
-    (format t "~{~%~a~^ ~}))~%~%" mot-str)))
 
-(defun attrib->desig-rule (attrib &optional (type :inference))
- "Receives a rule in the form of am :keyword and a optional type :inference, :mandatory or :context, then generates a designator rule which is ready to be copy and pasted"
-  (case type
-      (:inference
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(-> (member :~a ?attributes)~%" att-str)
-         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
-         (format t "?~a)))~%" att-str)
-         (format t "(equal ?~a nil))~%" att-str)))
-      (:mandatory
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(-> (member :~a ?attributes)~%" att-str)
-         (format t "(or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(and (format \"WARNING: Please specify the ~a.\")~%" att-str)
-         (format t "(fail)))~%")
-         (format t "(equal ?~a nil))~%" att-str)))
-      (:context
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
-         (format t "?~a)))~%" att-str)))))
+
