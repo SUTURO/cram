@@ -3,9 +3,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;time
+;; @author Luca Krohm
 (defmacro measure-time (&body body)
+  ;; log the current time
   `(let ((start (get-universal-time)))
+     ;; execute the body, usually your plan
      ,@body
+     ;; measure the time it took to execute the plan
      (- (get-universal-time) start)))
 ;;;;;;;;;;;;;;;;
 
@@ -277,7 +281,7 @@
 
 
 
-;;@author Tede von Knorre, Felix Krause
+;;@author Felix Krause
 (defun simple-knowledge (query &optional (package *package*))
   (print package)
   (with-safe-prolog
@@ -292,22 +296,37 @@
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
 ;;@author Felix Krause
+(defun modified-place-pose (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (second (second result)) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (- (third (third result)) 0.1) (fourth (third result)))))
+
+(defun make-pose-stamped-from-knowledge-result-sg-pick-up (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (second (second result)) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (+ (third (third result)) 0.02) (fourth (third result)))))
+
+
 (defun make-pose-stamped-from-knowledge-result-table-right (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (first (second result)) (- (second (second result)) 0.5) (third (second result)))
+    (first (second result)) (- (second (second result)) 0.3) (third (second result)))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-table-left (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (first (second result)) (+ (second (second result)) 0.5) (third (second result)))
+    (first (second result)) (+ (second (second result)) 0.3) (third (second result)))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
@@ -316,7 +335,7 @@
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
   )
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies-breakfast (result)
   (let ((height (cond
                   ((> (third (second result)) 1.12000) 1.13500)
@@ -326,11 +345,11 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (first (second result)) (second (second result)) height)
+   (first (second result))  (- (second (second result)) 0.12) (+ (third (second result)) 0.01))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
 
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
@@ -339,7 +358,7 @@
    (cl-tf:make-identity-rotation))
   )
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-mug (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
@@ -348,7 +367,7 @@
    (cl-tf:make-identity-rotation))
   )
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl-breakfast (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
@@ -517,13 +536,6 @@
                                       (btr:get-environment-object))))
       (t (error "Please enter a valid openable object"))))
 
-(defmethod exe-perform-type ((action-type (eql :reaching)) &key (arm :left) ?object)
-        (exe:perform
-         (desig:an action
-                   (type reaching)
-                   (object ?object)
-                   )))
-
 ;;;;;;;;;;;;;;
 ;; BTR-Utility
 
@@ -616,46 +628,44 @@
 ;; VANESSA ---------------------------------------------------------------------
 
 
-
+;; @author Vanessa (Robocup), Luca Krohm
 (defun human-assist (talk &key (object nil))
-  ;little bit different, talk, then move you arm, then open gripper otherwise she hits herself sometimes
   (talk-request "I will need some help from the human,i will now move my arm, please be careful: " talk)
-  ;;this can also be used for bowl
   (cpl:seq
+    ;; First move the robot into the "waiting" pose
     (wait-robot)
+    ;; then open the gripper
     (exe:perform (desig:a motion
                           (type gripper-motion)
                           (:open-close :open)
                           (effort 0.1))))
-  ;;todo what if we dont find the plate?
+  ;; give instructions
   (talk-request "When the object is between my fingers, push down my hand." talk)
   (talk-request "Please give me the object: " talk :current-knowledge-object object)
-;;   (talk-request "Please give me the ~a,
-;; When you are ready poke the white part of my hand." talk)
   
   ;;waiting for human
-    (exe:perform
-     (desig:an action
-               (type monitoring-joint-state)
-               (joint-name "wrist_flex_joint")))
+  (exe:perform
+   (desig:an action
+             (type monitoring-joint-state)
+             (joint-name "wrist_flex_joint")))
   
-   (talk-request "Closing the Gripper, thank you." talk)
+  (talk-request "Closing the Gripper, thank you." talk)
   ;;closing gripper
   (exe:perform (desig:a motion
                         (type gripper-motion)
                         (:open-close :close)
                         (effort 0.1))))
 
-
-
+;; @author Vanessa (Robocup)
 (defun talk-request (talk-string talk &key (current-knowledge-object nil))
   "Use this function as follow (talk-string 'I will now pick up ' t/n :current-knowledge-object 'http...#bowl_34123')"
   ;;just added a when around it so we can decide if toya should be silent
- (let* ((talkery talk-string))
-  (when current-knowledge-object
-    (setf talkery (concatenate 'string talk-string  (trim-knowledge-string current-knowledge-object))))
-  (when talk (call-text-to-speech-action talkery))))
+  (let* ((talkery talk-string))
+    (when current-knowledge-object
+      (setf talkery (concatenate 'string talk-string  (trim-knowledge-string current-knowledge-object))))
+    (when talk (call-text-to-speech-action talkery))))
 
+;; @author Vanessa (Robocup), Luca Krohm
 (defun trim-knowledge-string (current-knowledge-object)
   "trims the knowledge name, when it is with http"
   (let* ((?obj-start (or (search "#" current-knowledge-object)
@@ -668,65 +678,67 @@
            (?obj (subseq (string-trim "#" ?obj-trim) 0 ?obj-end)))
       ?obj)))
 
-
-
-(defun extract-percept-msg-obj-type-to-string (?list-of-objects)
-  ;;to-do if u found 2 of the same maybe delee and say 2?
-  ;;loop over the objects get the description out of it and make it as string
-  (mapcar (lambda (percept-object)
-            (roslisp:with-fields
-                ((description
-                  (cram-designators:description)))
-                percept-object
-              (cl::write-to-string
-               (second
-                (second description)))))
-          ?list-of-objects))
-
-
-
-;; (let *((?test-place-pose
-;;            (cl-transforms-stamped:make-pose-stamped
-;;             cram-tf:*fixed-frame*
-;;             0.0
-;;             (cl-transforms:make-3d-vector 1.0 0.0 0.5)
-;;             (cl-transforms:make-quaternion 0 0 0.0 1))))
-;;                   (exe:perform (desig:an action
-;;                                  (type :placing-cart)
-;;                                  (goal-pose ?cereal-target-pose)
-
-
-;; (defun place-object (?arm ?target-pose-as-list
-;;                      &key ?left-grasp ?right-grasp ?object-placed-on ?object-to-place ?attachment)
-;;   (let ((?target-pose (ensure-pose-stamped ?target-pose-as-list)))
-
-;;       (exe:perform 
-;;        (desig:an action
-;;                  (type placing)
-;;                  (arm ?arm)
-;;                  (desig:when ?object-to-place
-;;                    (object ?object-to-place))
-;;                  (desig:when ?right-grasp
-;;                    (right-grasp ?right-grasp))
-;;                  (desig:when ?left-grasp
-;;                    (left-grasp ?left-grasp))
-;;                  (target (desig:a location
-;;                                   (desig:when ?object-placed-on
-;;                                     (on ?object-placed-on))
-;;                                   (desig:when ?object-to-place
-;;                                     (for ?object-to-place))
-;;                                   (desig:when ?attachment
-;;                                     (attachment ?attachment))
-;;                                   (pose ?target-pose)))))))
-
 ;;;;;;;;;;;;
 ;; VANESSA -----------------------------------------------------------------END
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;; Testing stuff ;;;;;;;;;;;;;;;;;;;;;;
 
-;; Luca
+(defun robocup-pick-test ()
+
+  (with-knowledge-result (placeshelf pickuptable)
+      `(and ("reset_user_data")
+            ("init_storing_groceries")
+            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
+            ("object_rel_pose" object1 "perceive" placeshelf)
+            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
+            ("object_rel_pose" object2 "perceive" pickuptable))
+
+    (loop
+      (park-robot)
+      (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+      (perc-robot)
+
+      (let* ((?source-object-desig
+               (desig:an object
+                         (type :everything)))
+             (?source-perceived-object-desig
+               (exe:perform (desig:an action
+                                      (type detecting)
+                                      (object ?source-object-desig)))))
+        
+             ;;Extracts pose from the return value of the detecting Designator.
+             (roslisp:with-fields 
+                 ((?pose
+                   (cram-designators::pose cram-designators:data)))
+                 ?source-perceived-object-desig
+
+                  (su-demos::with-knowledge-result (frame)
+                      `(and ("next_object" nextobject)
+                            ("object_shape_workaround" nextobject frame _ _ _))
+                            
+                    (let* ((?object-size (get-robo-object-size frame)))
+                      
+                      
+                      (exe:perform (desig:an action
+                                             (type :picking-up)
+                                             (goal-pose ?pose)
+                                             (object-size ?object-size)
+                                            ;; (sequence-goal ?sequence-goals)
+                                             (collision-mode :allow-all)))))
+
+                 (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
+                 (park-robot)
+                 (call-text-to-speech-action "Please catch the object")
+                 (sleep 2)
+                 (exe:perform (desig:a motion
+                                       (type gripper)
+                                       (gripper-state "open"))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
+;; Robot poses
+;; @author Luca Krohm
 (defun park-robot ()
   "Default pose"
     (exe:perform (desig:a motion
@@ -738,12 +750,13 @@
                         (pose-keyword "park"))))
 
 (defun pre-align-height-robot ()
+  "Pose which the robot should take before calling 'aligning-height', in order to make sure she does not hit herself"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "pre_align_height"))))
 
 (defun perc-robot ()
-  "Default pose"
+  "Perceive pose"
     (exe:perform (desig:a motion
                         (type gripper-motion)
                         (:open-close :close)
@@ -753,14 +766,63 @@
                         (pose-keyword "perceive"))))
 
 (defun wait-robot ()
-  "Default pose"
+  "Assist pose"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "assistance"))))
 
 (defun carry-robot ()
-  "Default pose"
+  "Carry pose"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "carry"))))
+
+;; autogeneration functions
+;; @author Luca Krohm
+(defun motions->sequence-desig (motions)
+  "Receives a motion list in the form of '(:some :motion :keywords :like :reaching), then generates a sequence goal designator which is ready to be copy and pasted"
+  (let* ((attribs (su-real::get-all-attributes motions))
+         (motion-string (string-downcase (format nil ":~{~a~^ :~}" motions)))
+         (info "Copy and paste the following designator into your code and adjust the variables where needed:")
+         (des-str '("(exe:perform"
+                    "(desig:an action"
+                    "(type sequence-goal)"
+                    "(action ?action)"))
+         (att-str (mapcar (lambda (attr)
+                             (string-downcase (format nil "(~a ?~a)" attr attr)))
+                          (remove :context attribs)))
+         (mot-str (push (format nil "(motions (~a))" motion-string) att-str)))
+    (format t "~a~%" info)
+    (format t "~{~%~a~^ ~}" des-str)
+    (format t "~{~%~a~^ ~}))~%~%" mot-str)))
+
+;; @author Luca Krohm
+(defun attrib->desig-rule (attrib &optional (type :inference))
+ "Receives a rule in the form of am :keyword and a optional type :inference, :mandatory or :context, then generates a designator rule which is ready to be copy and pasted"
+  (case type
+      (:inference
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:mandatory
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(and (format \"WARNING: Please specify the ~a.\")~%" att-str)
+         (format t "(fail)))~%")
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:context
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)))))
 
