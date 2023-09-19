@@ -534,7 +534,7 @@
                          (exe:perform
                           (desig:an action
                                     (type monitoring-joint-state)
-                                    (joint-angle-threshold -0.6)
+                                    (joint-angle-threshold -0.9)
                                     (joint-name "hand_l_proximal_joint")))))
                  ))
 
@@ -724,7 +724,7 @@
                          (exe:perform
                           (desig:an action
                                     (type monitoring-joint-state)
-                                    (joint-angle-threshold -0.6)
+                                    (joint-angle-threshold -0.9)
                                     (joint-name "hand_l_proximal_joint"))))) 
 
 
@@ -752,7 +752,7 @@
                           (collision-object-b-link ?collision-object-b-link)
                           (collision-object-a ?collision-object-a)
                           (allow-base ?move-base)
-                          (reference-frame t)
+                          (reference-frame T)
                           (prefer-base ?prefer-base)
                           (straight-line ?straight-line)
                           (align-planes-left ?align-planes-left)
@@ -779,7 +779,7 @@
       (let ((vector (cl-tf::origin pose)))
         (cl-tf::copy-3d-vector
          vector
-         :x (- (cl-tf::x vector) 0.01)
+         :x (- (cl-tf::x vector) 0.015)
          :y (cl-tf::y vector) 
          :z (cl-tf::z vector)))
       :orientation
