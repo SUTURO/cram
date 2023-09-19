@@ -295,12 +295,18 @@
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
 ;;@author Felix Krause
-(defun modified-place-pose (result)
-  (cl-tf:make-pose-stamped
-   (first result) 0.0
-   (cl-tf:make-3d-vector
-    (first (second result)) (second (second result)) (third (second result)))
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (- (third (third result)) 0.1) (fourth (third result)))))
+(defun modified-place-pose (pose)
+  (cl-tf::copy-pose-stamped
+   pose
+   :origin
+   (let ((vector (cl-tf::origin pose)))
+     (cl-tf::copy-3d-vector
+      vector
+      :x (cl-tf::x vector)
+      :y (cl-tf::y vector) 
+      :z (- (cl-tf::z vector) 0.1))
+     :orientation
+     (cl-tf::orientation pose))))
 
 (defun make-pose-stamped-from-knowledge-result-sg-pick-up (result)
   (cl-tf:make-pose-stamped

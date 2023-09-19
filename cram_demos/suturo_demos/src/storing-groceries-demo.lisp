@@ -367,7 +367,7 @@
           ;;Pick up the next best object in the list.
           (let*  ((?collision-mode collision-mode)
                   ;;HARDCODED
-                  (?object-size (cl-tf2::make-3d-vector 0.06 0.145 0.22));;(extract-size ?current-object))
+                  (?object-size (cl-tf2::make-3d-vector 0.06 0.145 0.25));;(extract-size ?current-object))
                   (?object-height 0.23)
                   ;;DYNAMIC Elements
 
@@ -404,9 +404,9 @@
             ;;(talk-request "I will now place: " talk :current-knowledge-object ?current-object)
 
 
-            ;; (when (search "Apple" ?next-object)
-            ;;   (setf ?next-place-pose (modified-place-pose ?next-place-pose))
-            ;;   )
+            (when (search "Apple" ?next-object)
+              (setf ?next-place-pose (modified-place-pose ?next-place-pose))
+              )
 
             
             ;;Places the object currently held.
