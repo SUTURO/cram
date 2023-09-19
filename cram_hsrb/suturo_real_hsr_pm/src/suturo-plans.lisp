@@ -8,23 +8,16 @@
                   ((:collision-object-b ?collision-object-b))
                   ((:collision-object-b-link ?collision-object-b-link))
                   ((:collision-object-a ?collision-object-a))
-                  ((:move-base ?move-base))
-                  ((:prefer-base ?prefer-base))
-                  ((:straight-line ?straight-line))
-                  ((:align-planes-left ?align-planes-left))
-                  ((:align-planes-right ?align-planes-right))
-                  ((:precise-tracking ?precise-tracking))
                   ((:object-type ?object-type))
                   ((:goal-pose ?goal-pose))
                   ((:object-size ?object-size))
-                  ((:object-shape ?object-shape))
                   ((:object-name ?object-name))
-                  ((:from-above ?from-above))
+                  ((:context ?context))
                   ((:sequence-goal ?sequence-goal))
                 &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
   (cpl:with-retry-counters ((manip-retries 1))
     (cpl:with-failure-handling
         ((common-fail:gripper-closed-completely (e)
@@ -55,24 +48,12 @@
              (cpl:retry))))
       
       (unless ?sequence-goal
-        (let ((?object-height (cl-transforms:z ?object-size))
-              (?context `(("action" . "grasping")
-                          ("from_above" . ,?from-above)
-                          )))
+        (let ((?object-height (cl-transforms:z ?object-size)))
           (su-demos::pre-align-height-robot)
 
           (exe:perform (desig:a motion
                                 (type aligning-height)
                                 (collision-mode ?collision-mode)
-                                (collision-object-b ?collision-object-b)
-                                (collision-object-b-link ?collision-object-b-link)
-                                (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (goal-pose ?goal-pose)
                                 (context ?context)
                                 (object-height ?object-height)
@@ -82,21 +63,22 @@
                                 (type gripper)
                                 (gripper-state "open")))
           
-          (let ((?context `(("action" . "grasping")
-                            ("from_above" . ,?from-above))))
-            
-            (exe:perform (desig:a motion
-                                  (type reaching)
-                                  (collision-mode ?collision-mode)
-                                  (goal-pose ?goal-pose)
-                                  (object-size ?object-size)
-                                  (object-shape ?object-shape)
-                                  (object-name ?object-name)
-                                  (context ?context))))
+          
+
+          (exe:perform (desig:a motion
+                                (type reaching)
+                                (collision-mode ?collision-mode)
+                                (goal-pose ?goal-pose)
+                                (object-size ?object-size)
+                                (object-name ?object-name)
+                                (context ?context)))
 
           (sleep 2)
 
-          (if ?from-above
+          ;; so far we only ever grasp from above when picking up a very small object, ie a spoon
+          ;; in which case the joint-state failurehandling fails. to prevent that case I added
+          ;; the following if statement
+          (if (assoc "from_above" ?context :test #'string=)
               (exe:perform (desig:a motion
                                     (type gripper)
                                     (gripper-state "close")))
@@ -105,7 +87,8 @@
                   (exe:perform (desig:a motion
                                         (type gripper)
                                         (gripper-state "close")))
-                  (sleep 1)
+                  ;; sleep to give the failurehandling a chance to abort
+                  (sleep 3)
                   (su-demos::call-text-to-speech-action "I was able to grasp the object"))
                 (cpl:seq
                   (exe:perform
@@ -113,37 +96,20 @@
                              (type monitoring-joint-state)
                              (joint-name "hand_l_proximal_joint")))
                   (su-demos::call-text-to-speech-action "Failed to grasp the object, retrying")
+                  ;; sleep to make sure toya finishes her sentence
                   (sleep 1)
                   (cpl:fail 'common-fail:gripper-closed-completely
                             :description "Object slipped"))))
           
-          (let ((?context `(("action" . "grasping"))))
-            (exe:perform (desig:a motion
-                                  (type :lifting)
-                                  (collision-mode ?collision-mode)
-                                  (collision-object-b ?collision-object-b)
-                                  (collision-object-b-link ?collision-object-b-link)
-                                  (collision-object-a ?collision-object-a)
-                                  (allow-base ?move-base)
-                                  (prefer-base ?prefer-base)
-                                  (straight-line ?straight-line)
-                                  (align-planes-left ?align-planes-left)
-                                  (align-planes-right ?align-planes-right)
-                                  (precise-tracking ?precise-tracking)
-                                  (context ?context))))
+          
+          (exe:perform (desig:a motion
+                                (type :lifting)
+                                (collision-mode ?collision-mode)
+                                (context ?context)))
 
           (exe:perform (desig:a motion
                                 (type :retracting)
                                 (collision-mode ?collision-mode)
-                                (collision-object-b ?collision-object-b)
-                                (collision-object-b-link ?collision-object-b-link)
-                                (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (object-name ?object-name)))))
       
       (when ?sequence-goal
@@ -151,9 +117,7 @@
                               (type gripper)
                               (gripper-state "open")))
         (su-demos::pre-align-height-robot)
-        (let ((?motions (list :aligning-height :reaching))
-              (?object-height (cl-transforms:z ?object-size)))
-          (print "sequence1")
+        (let ((?motions (list :aligning-height :reaching)))
           ;;(break)
           (exe:perform
            (desig:an action
@@ -162,29 +126,34 @@
                      (motions ?motions)
                      (goal-pose ?goal-pose)
                      (object-size ?object-size)
-                     (from-above ?from-above)
-                     (object-height ?object-height)
-                     (object-name "test")
+                     (object-name ?object-name)
                      (gripper-state "neutral"))))
         ;;(break)
-        
-        (cpl:pursue
-          (cpl:seq
+
+
+        ;; current failurehandling does not work great with sequencegoals yet
+        ;; (cpl:pursue
+        ;;   (cpl:seq
+        ;;     (exe:perform (desig:a motion
+        ;;                           (type gripper)
+        ;;                           (gripper-state "close")))
+        ;;     (sleep 1)
+        ;;     (su-demos::call-text-to-speech-action "Managed to grasp the object"))
+        ;;   (cpl:seq
+        ;;     (exe:perform
+        ;;      (desig:an action
+        ;;                (type monitoring-joint-state)
+        ;;                (joint-name "hand_l_proximal_joint")))
+        ;;     (su-demos::call-text-to-speech-action "Failed to grasp the object, retrying")
+        ;;     (sleep 1)
+        ;;     (cpl:fail 'common-fail:gripper-closed-completely
+        ;;               :description "Object slipped"
+        ;;     )))
+
             (exe:perform (desig:a motion
                                   (type gripper)
                                   (gripper-state "close")))
-            (sleep 1)
-            (su-demos::call-text-to-speech-action "Managed to grasp the object"))
-          (cpl:seq
-            (exe:perform
-             (desig:an action
-                       (type monitoring-joint-state)
-                       (joint-name "hand_l_proximal_joint")))
-            (su-demos::call-text-to-speech-action "Failed to grasp the object, retrying")
-            (sleep 1)
-            ;; (cpl:fail 'common-fail:gripper-closed-completely
-            ;;           :description "Object slipped"
-            ))
+        
         (print "sequence2")
         ;;(break)
         (let ((?motions (list :vertical-motion :retracting)))
@@ -193,7 +162,7 @@
                      (type sequence-goal)
                      (action "grasping")
                      (motions ?motions)
-                     (object-name "test"))))))))
+                     (object-name ?object-name))))))))
 
 ;; @author Luca Krohm
 ;; @TODO failurehandling
@@ -203,89 +172,54 @@
                 ((:collision-object-b ?collision-object-b))
                 ((:collision-object-b-link ?collision-object-b-link))
                 ((:collision-object-a ?collision-object-a))
-                ((:move-base ?move-base))
-                ((:prefer-base ?prefer-base))
-                ((:straight-line ?straight-line))
-                ((:align-planes-left ?align-planes-left))
-                ((:align-planes-right ?align-planes-right))
-                ((:precise-tracking ?precise-tracking))
                 ((:goal-pose ?goal-pose))
                 ((:object-size ?object-size))
-                ((:from-above ?from-above))
+                ((:context ?context))
                 ((:inside ?inside))
-                ((:neatly ?neatly))
                 ((:sequence-goal ?sequence-goal))
               &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
   (unless ?sequence-goal
-    (let ((?object-height (cl-transforms:z ?object-size))
-          (?context `(("action" . "placing")
-                      ("from_above" . ,?from-above))))
+    (let ((?object-height (cl-transforms:z ?object-size)))
       (exe:perform (desig:a motion
                             (type aligning-height)
                             (collision-mode ?collision-mode)
-                            (collision-object-b ?collision-object-b)
-                            (collision-object-b-link ?collision-object-b-link)
-                            (collision-object-a ?collision-object-a)
-                            (allow-base ?move-base)
-                            (prefer-base ?prefer-base)
-                            (straight-line ?straight-line)
-                            (align-planes-left ?align-planes-left)
-                            (align-planes-right ?align-planes-right)
-                            (precise-tracking ?precise-tracking)
                             (goal-pose ?goal-pose)
                             (object-height ?object-height)
                             (context ?context))))
     
-    (let ((?context `(("action" . "placing")
-                      ("from_above" . ,?from-above))))
-
-      (when ?inside
-        (setf ?object-size (cl-tf:make-3d-vector (cl-tf:z ?object-size)
-                                                 (cl-tf:y ?object-size)
-                                                 (+ (cl-tf:x ?object-size) 0.05))))
-      (exe:perform (desig:a motion
-                            (type reaching)
-                            (collision-mode ?collision-mode)
-                            (goal-pose ?goal-pose)
-                            (object-size ?object-size)
-                            (from-above ?from-above)
-                            (context ?context))))
+    ;; this was added because we planned on putting a spoon inside a cup to transport it.
+    ;; for this to work, the size of the object had to be rotated, to represent the correct height
+    ;; in this situation
+    (when ?inside
+      (setf ?object-size (cl-tf:make-3d-vector (cl-tf:z ?object-size)
+                                               (cl-tf:y ?object-size)
+                                               (+ (cl-tf:x ?object-size) 0.05))))
+    (exe:perform (desig:a motion
+                          (type reaching)
+                          (collision-mode ?collision-mode)
+                          (goal-pose ?goal-pose)
+                          (object-size ?object-size)
+                          (context ?context)))
 
     (cond
-      (?inside ;; inside could be done with cram "location" in the future, but can sth both be a location and an object?
-       (let ((?context `(("action" . "placing")))
-             (?height (cl-tf:z (su-demos::get-target-size-clean-up ?inside))))
+      (?inside ;; inside could be done with cram "location" in the future, but can sth both be a
+       ;; location and an object? (because of the cup mentioned earlier, which then would function
+       ;; as an object as well as a location)
+       (let ((?height (cl-tf:z (su-demos::get-target-size-clean-up ?inside))))
           (exe:perform (desig:a motion
                                 (type :vertical-motion)
                                 (collision-mode ?collision-mode)
-                                (collision-object-b ?collision-object-b)
-                                (collision-object-b-link ?collision-object-b-link)
-                                (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (distance ?height)
                                 (context ?context)))))
 
-      (?neatly
+      ((assoc "neatly" ?context :test #'string=)
         (exe:perform (desig:a motion
                               (type placing)
+                              (context ?context)
                               (collision-mode ?collision-mode)
-                              (collision-object-b ?collision-object-b)
-                              (collision-object-b-link ?collision-object-b-link)
-                              (collision-object-a ?collision-object-a)
-                              (allow-base ?move-base)
-                              (prefer-base ?prefer-base)
-                              (straight-line ?straight-line)
-                              (align-planes-left ?align-planes-left)
-                              (align-planes-right ?align-planes-right)
-                              (precise-tracking ?precise-tracking)
                               (goal-pose ?goal-pose)))))
 
     (exe:perform (desig:a motion
@@ -294,22 +228,15 @@
     
     (exe:perform (desig:a motion
                           (type :retracting)
-                          (collision-mode ?collision-mode)
-                          (collision-object-b ?collision-object-b)
-                          (collision-object-b-link ?collision-object-b-link)
-                          (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking))))
+                          (collision-mode ?collision-mode))))
 
   (when ?sequence-goal
     (let ((?motions (list :aligning-height :reaching))
           (?object-height (cl-transforms:z ?object-size)))
       (print "sequence1")
       ;;(break)
+
+      
       (exe:perform
        (desig:an action
                  (type sequence-goal)
@@ -317,63 +244,42 @@
                  (motions ?motions)
                  (goal-pose ?goal-pose)
                  (object-size ?object-size)
-                 (from-above ?from-above)
-                 (object-height ?object-height)
                  (object-name "test"))))
-    
-    (when ?neatly
+
+    ;; ?neatly *does not* work directly within sequence goals, because of the force monitor
+    (when (assoc "neatly" ?context :test #'string=)
       (exe:perform (desig:a motion
                             (type placing)
+                            (context ?context)
+                            (object-size ?object-size)
                             (collision-mode ?collision-mode)
-                            (collision-object-b ?collision-object-b)
-                            (collision-object-b-link ?collision-object-b-link)
-                            (collision-object-a ?collision-object-a)
-                            (allow-base ?move-base)
-                            (prefer-base ?prefer-base)
-                            (straight-line ?straight-line)
-                            (align-planes-left ?align-planes-left)
-                            (align-planes-right ?align-planes-right)
-                            (precise-tracking ?precise-tracking)
                             (goal-pose ?goal-pose))))
+    
     (exe:perform (desig:a motion
                           (type gripper)
                           (gripper-state "open")))
     
     (exe:perform (desig:a motion
                           (type :retracting)
-                          (collision-mode ?collision-mode)
-                          (collision-object-b ?collision-object-b)
-                          (collision-object-b-link ?collision-object-b-link)
-                          (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking)))))
+                          (collision-mode ?collision-mode)))))
 
 
 ;; @author Felix Krause, Luca Krohm
 ;; @TODO failurehandling
+;; Failure Handling technische Präsentation Felix.
 ;; sequence doesnt make sense yet
 (defun open-door (&key
                     ((:collision-mode ?collision-mode))
                     ((:collision-object-b ?collision-object-b))
                     ((:collision-object-b-link ?collision-object-b-link))
                     ((:collision-object-a ?collision-object-a))
-                    ((:move-base ?move-base))
-                    ((:prefer-base ?prefer-base))
-                    ((:straight-line ?straight-line))
-                    ((:align-planes-left ?align-planes-left))
-                    ((:align-planes-right ?align-planes-right))
-                    ((:precise-tracking ?precise-tracking))
                     ((:handle-link ?handle-link))
                     ((:handle-pose ?handle-pose))
                     ((:joint-angle ?joint-angle))
                   &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
-  (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-                 ?align-planes-left ?align-planes-right))
+  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
+  ;;                ?align-planes-left ?align-planes-right))
 
   (let ((total-retries 0)
         (base-distance 0.05)
@@ -405,12 +311,6 @@
                                      (collision-object-b ?collision-object-b)
                                      (collision-object-b-link ?collision-object-b-link)
                                      (collision-object-a ?collision-object-a)
-                                     (allow-base ?move-base)
-                                     (prefer-base ?prefer-base)
-                                     (straight-line ?straight-line)
-                                     (align-planes-left ?align-planes-left)
-                                     (align-planes-right ?align-planes-right)
-                                     (precise-tracking ?precise-tracking)
                                      (tip-link t)))
                ;;Park robot
                (su-demos::prepare-robot)
@@ -431,12 +331,6 @@
                                 (collision-object-b ?collision-object-b)
                                 (collision-object-b-link ?collision-object-b-link)
                                 (collision-object-a ?collision-object-a)
-                                (allow-base ?move-base)
-                                (prefer-base ?prefer-base)
-                                (straight-line ?straight-line)
-                                (align-planes-left ?align-planes-left)
-                                (align-planes-right ?align-planes-right)
-                                (precise-tracking ?precise-tracking)
                                 (goal-pose ?reaching-pose)
                                 (context ?context))))))
     
@@ -470,12 +364,6 @@
                                                          (collision-object-b ?collision-object-b)
                                                          (collision-object-b-link ?collision-object-b-link)
                                                          (collision-object-a ?collision-object-a)
-                                                         (allow-base ?move-base)
-                                                         (prefer-base ?prefer-base)
-                                                         (straight-line ?straight-line)
-                                                         (align-planes-left ?align-planes-left)
-                                                         (align-planes-right ?align-planes-right)
-                                                         (precise-tracking ?precise-tracking)
                                                          (tip-link t)))
 
                                    ;;Park robot
@@ -498,12 +386,7 @@
                                                   (collision-object-b ?collision-object-b)
                                                   (collision-object-b-link ?collision-object-b-link)
                                                   (collision-object-a ?collision-object-a)
-                                                  (allow-base ?move-base)
-                                                  (prefer-base ?prefer-base)
-                                                  (straight-line ?straight-line)
-                                                  (align-planes-left ?align-planes-left)
-                                                  (align-planes-right ?align-planes-right)
-                                                  (precise-tracking ?precise-tracking)
+                                                 
                                                   (tip-link t)))
                
                             (let ((?context `(("action" . "door-opening"))))
@@ -513,12 +396,6 @@
                                                     (collision-object-b ?collision-object-b)
                                                     (collision-object-b-link ?collision-object-b-link)
                                                     (collision-object-a ?collision-object-a)
-                                                    (allow-base ?move-base)
-                                                    (prefer-base ?prefer-base)
-                                                    (straight-line ?straight-line)
-                                                    (align-planes-left ?align-planes-left)
-                                                    (align-planes-right ?align-planes-right)
-                                                    (precise-tracking ?precise-tracking)
                                                     (goal-pose ?reaching-pose)
                                                     (context ?context))))))
 
@@ -595,12 +472,6 @@
                                               (collision-object-b ?collision-object-b)
                                               (collision-object-b-link ?collision-object-b-link)
                                               (collision-object-a ?collision-object-a)
-                                              (allow-base ?move-base)
-                                              (prefer-base ?prefer-base)
-                                              (straight-line ?straight-line)
-                                              (align-planes-left ?align-planes-left)
-                                              (align-planes-right ?align-planes-right)
-                                              (precise-tracking ?precise-tracking)
                                               (tip-link t)))
 
 
@@ -623,12 +494,6 @@
                                          (collision-object-b ?collision-object-b)
                                          (collision-object-b-link ?collision-object-b-link)
                                          (collision-object-a ?collision-object-a)
-                                         (allow-base ?move-base)
-                                         (prefer-base ?prefer-base)
-                                         (straight-line ?straight-line)
-                                         (align-planes-left ?align-planes-left)
-                                         (align-planes-right ?align-planes-right)
-                                         (precise-tracking ?precise-tracking)
                                          (goal-pose ?reaching-pose)
                                          (context ?context))))
              
@@ -662,12 +527,6 @@
                                                              (collision-object-b ?collision-object-b)
                                                              (collision-object-b-link ?collision-object-b-link)
                                                              (collision-object-a ?collision-object-a)
-                                                             (allow-base ?move-base)
-                                                             (prefer-base ?prefer-base)
-                                                             (straight-line ?straight-line)
-                                                             (align-planes-left ?align-planes-left)
-                                                             (align-planes-right ?align-planes-right)
-                                                             (precise-tracking ?precise-tracking)
                                                              (tip-link t)))
 
 
@@ -691,12 +550,6 @@
                                                       (collision-object-b ?collision-object-b)
                                                       (collision-object-b-link ?collision-object-b-link)
                                                       (collision-object-a ?collision-object-a)
-                                                      (allow-base ?move-base)
-                                                      (prefer-base ?prefer-base)
-                                                      (straight-line ?straight-line)
-                                                      (align-planes-left ?align-planes-left)
-                                                      (align-planes-right ?align-planes-right)
-                                                      (precise-tracking ?precise-tracking)
                                                       (tip-link t)))
                
                             (let ((?context `(("action" . "door-opening"))))
@@ -706,12 +559,6 @@
                                                     (collision-object-b ?collision-object-b)
                                                     (collision-object-b-link ?collision-object-b-link)
                                                     (collision-object-a ?collision-object-a)
-                                                    (allow-base ?move-base)
-                                                    (prefer-base ?prefer-base)
-                                                    (straight-line ?straight-line)
-                                                    (align-planes-left ?align-planes-left)
-                                                    (align-planes-right ?align-planes-right)
-                                                    (precise-tracking ?precise-tracking)
                                                     (goal-pose ?reaching-pose)
                                                     (context ?context)))))) (cpl:retry))))
                      (cpl:pursue
@@ -751,22 +598,30 @@
                           (collision-object-b ?collision-object-b)
                           (collision-object-b-link ?collision-object-b-link)
                           (collision-object-a ?collision-object-a)
-                          (allow-base ?move-base)
-                          (reference-frame T)
-                          (prefer-base ?prefer-base)
-                          (straight-line ?straight-line)
-                          (align-planes-left ?align-planes-left)
-                          (align-planes-right ?align-planes-right)
-                          (precise-tracking ?precise-tracking)
-                          (tip-link t)))
-
-
-
-
-
-    
+                          (object-name ?handle-link)
+                          (goal-pose ?handle-pose)))
   
- ))
+  (exe:perform (desig:a motion
+                        (type gripper)
+                        (gripper-state "close")))
+  
+  (exe:perform (desig:a motion
+                        (type pulling)
+                        (arm :left)
+                        (collision-object-b-link ?handle-link)
+                        (joint-angle ?joint-angle)))
+
+  (exe:perform (desig:a motion
+                        (type gripper)
+                        (gripper-state "neutral")))
+
+  ;; tiplink t because we dont want to retract the whole robot and risk getting stuck on the door.
+  ;; instead we just want to retract the hand from the door
+  (exe:perform (desig:a motion
+                        (type :retracting)
+                        (collision-mode ?collision-mode)
+                        (tip-link t)))))
+
 
 
 ;; @author Felix Krause
@@ -824,6 +679,8 @@
      (/ current-distance 1.05)
      )))
 
+
+
 ;; @author Luca Krohm
 (defun open-gripper (&key
                        ((:effort ?effort))
@@ -848,16 +705,24 @@
                   ((:target-object ?target-object))
                   ((:target-size ?target-size))
                   ((:target-name ?target-name))
+                  ((:context ?context))
                   ((:sequence-goal ?sequence-goal))
                 &allow-other-keys)
   "Receives parameters from action-designator, and then executes the corresponding motions"
 
-  (let* ((?object-transform (cl-tf:make-transform-stamped "base_footprint" ?target-object 0
-                                                          (cl-tf:translation (cl-tf:lookup-transform cram-tf:*transformer* "base_footprint" ?target-object))
-                                                          (cl-tf:make-quaternion 0 0 0 1)))
-         ;; rel pose to rel transform
-         (?rel-pose-transform (cl-tf2::make-pose-stamped
-                               "base_footprint" 0
+  (let* (;; get transform of the object in base footprint
+         (?object-transform (cram-tf:copy-transform-stamped
+                             (cl-tf:lookup-transform cram-tf:*transformer*
+                                                     "base_footprint"
+                                                     ?target-object)
+                             :rotation (cl-tf:make-quaternion 0 0 0 1)))
+
+         
+         
+         ;; calculate relative pour pose, but in base_footprint to make sure we
+         ;; have the correct rotation
+         (?rel-pose-transform (cl-tf2::make-transform-stamped
+                               "base_footprint" "base_footprint" 0
                                (cl-transforms:make-3d-vector
                                 0
                                 (/ (+ (cl-transforms:y ?target-size)
@@ -867,20 +732,18 @@
                                       (cl-transforms:z ?object-size))
                                    2))
                                (cl-tf2::make-quaternion 0 0 0 1)))
-         ;; moves the bowlpose like specified in ?relative-pour-pose, creating ?pour-pose-transform
+         ;; applies the relative pour pose transform to the object transform, and
+         ;; then get that pose relative to the map
          (?pour-pose-transform (cram-tf:apply-transform
                                 (cl-tf:lookup-transform cram-tf:*transformer* "map" "base_footprint")
                                 (cram-tf:apply-transform ?object-transform
-                                                         (cram-tf:pose-stamped->transform-stamped
-                                                          ?rel-pose-transform
-                                                          "base_footprint"))))
+                                                         ?rel-pose-transform)))
          ;; pour transform to pour pose
          (?pour-pose (cram-tf:transform->pose-stamped
                       "map" 0
                       ?pour-pose-transform)))
     (unless ?sequence-goal
-      (let ((?height 0.2215)
-            (?context `(("action" . "pouring"))))
+      (let ((?height 0.2215))
         (exe:perform (desig:a motion
                               (type aligning-height)
                               (collision-mode ?collision-mode)
@@ -888,14 +751,14 @@
                               (object-height ?height)
                               (object-name ?target-name))))
 
-      (let ((?context `(("action" . "pouring"))))
-        (exe:perform (desig:a motion
-                              (type reaching)
-                              (collision-mode ?collision-mode)
-                              (goal-pose ?pour-pose)
-                              (object-size ?object-size)
-                              (object-name ?target-name)
-                              (context ?context))))
+
+      (exe:perform (desig:a motion
+                            (type reaching)
+                            (collision-mode ?collision-mode)
+                            (goal-pose ?pour-pose)
+                            (object-size ?object-size)
+                            (object-name ?target-name)
+                            (context ?context)))
 
       (exe:perform (desig:a motion
                             (type tilting)
@@ -912,16 +775,12 @@
       (exe:perform (desig:a motion
                             (type :retracting)
                             (reference-frame "hand_gripper_tool_frame")
-                            (collision-mode ?collision-mode)
-                            (collision-object-b ?collision-object-b)
-                            (collision-object-b-link ?collision-object-b-link)
-                            (collision-object-a ?collision-object-a))))
+                            (collision-mode ?collision-mode))))
 
     (when ?sequence-goal
-       (let ((?motions (list :aligning-height :reaching :tilting))
-             (?object-height (cl-transforms:z ?object-size)))
+       (let ((?motions (list :aligning-height :reaching :tilting)))
          (print "sequence1")
-      ;;(break)
+         ;;(break)
          (exe:perform
           (desig:an action
                     (type sequence-goal)
@@ -929,9 +788,8 @@
                     (motions ?motions)
                     (goal-pose ?pour-pose)
                     (object-size ?object-size)
-                    (object-height ?object-height)
                     (tilt-direction "right")
-                    (object-name "test"))))
+                    (object-name ?target-name))))
 
        (let ((?motions (list :tilting :retracting)))
          (print "sequence2")
@@ -943,78 +801,21 @@
                     (motions ?motions)
                     (reference-frame "hand_gripper_tool_frame")
                     (tilt-angle 0.0d0)
-                    (object-name "test")))))
- ))
+                    (object-name ?target-name)))))))
 
+
+;; @author Luca Krohm
 (defun sequence-goal (&key
-                        ((:action ?action))
-                        ((:motions ?motions))
-                        ((:object-type ?object-type))
-                        ((:goal-pose ?goal-pose))
-                        ((:object-height ?object-height))
-                        ((:object-size ?object-size))
-                        ((:object-shape ?object-shape))
-                        ((:object-name ?object-name))
-                        ((:from-above ?from-above))
-                        ((:target-object ?target-object))
-                        ((:target-size ?target-size))
-                        ((:target-name ?target-name))
-                        ((:tilt-direction ?tilt-direction))
-                        ((:tilt-angle ?tilt-angle))
-                        ((:reference-frame ?reference-frame))
-                        ((:gripper-state ?gripper-state))
-                        ((:pose-keyword ?pose-keyword))
-                        ((:distance ?distance))
+                        ((:motion-sequence ?motion-sequence))
+                        ((:collision-mode ?collision-mode))
                       &allow-other-keys)
-  (let ((?motion-sequence          
-          (mapcar (lambda (motion)
-                    (let ((attribs (get-attributes motion))
-                          (attr-list nil))
+  
+  (exe:perform (desig:a motion
+                        (type :sequence-goal)
+                        (collision-mode ?collision-mode)
+                        (motion-sequence ?motion-sequence))))
 
-                      (setf attr-list (remove nil (mapcar (lambda (attr)
-                                                            (case attr
-                                                              (:object-type (when ?object-type `("object_type" . ,?object-type)))
-                                                              (:goal-pose (when ?goal-pose `("goal_pose" . (("message_type" . "geometry_msgs/PoseStamped")
-                                                                                                            ("message" . ,(giskard::to-hash-table ?goal-pose))))))
-                                                              (:object-height (when ?object-height `("object_height" . ,?object-height)))
-                                                              (:object-size (when ?object-size `("object_size" . (("message_type" . "geometry_msgs/Vector3")
-                                                                                                                  ("message" . ,(giskard::to-hash-table ?object-size))))))
-                                                              (:object-shape (when ?object-shape `("object_shape" . ,?object-shape)))
-                                                              (:object-name (when ?object-name `("object_name". ,?object-name)))
-                                                              (:action (when ?action `("context" . ,(generate-context2 ?action `(from-above ,?from-above)))))
-                                                              (:target-object (when ?target-object `("target_object" . ,?target-object)))
-                                                              (:target-size (when ?target-size `("target_size" . (("message_type" . "geometry_msgs/Vector3")
-                                                                                                                  ("message" . ,(giskard::to-hash-table ?target-size))))))
-                                                              (:target-name (when ?target-name `("target_name" . ,?target-name)))
-                                                              (:tilt-direction (when ?tilt-direction `("tilt_direction" . ,?tilt-direction)))
-                                                              (:tilt-angle (when ?tilt-angle `("tilt_angle" . ,?tilt-angle)))
-                                                              (:reference-frame (when ?reference-frame `("reference_frame" . ,?reference-frame)))
-                                                              (:gripper-state (when ?gripper-state `("gripper_state" . ,?gripper-state)))
-                                                              (:pose-keyword (when ?pose-keyword `("pose_keyword" . ,?pose-keyword)))
-                                                              (:distance (when ?distance `("distance" . ,?distance)))))
-                                                          attribs)))
-               
-
-                      (case motion
-                        (:aligning-height `("AlignHeight" . ,attr-list))
-                        (:reaching `("Reaching" . ,attr-list))
-                        (:vertical-motion `("VerticalMotion" . ,attr-list))
-                        (:retracting `("Retracting" . ,attr-list))
-                        (:tilting `("Tilting" . ,attr-list))
-                        (:gripper `("MoveGripper" . ,attr-list))
-                        (:taking-pose `("TakePose" . ,attr-list)))))
-                  
-                  ?motions)))
-    
-    (print ?motion-sequence)
-    (print "------------------")
-    (print  (giskard::alist->json-string ?motion-sequence))
-    ;;(break)
-    (exe:perform (desig:a motion
-                          (type :sequence-goal)
-                          (collision-mode :allow-all)
-                          (motion-sequence ?motion-sequence)))))
-
+;; @author Luca Krohm
 (defun take-pose (&key
                     ((:pose-keyword ?pose-keyword))
                     ((:head-pan ?head-pan))
@@ -1043,8 +844,6 @@
   
   ;;added action just in case we want failurehandling later
 
-
-  
   (exe:perform (desig:a motion
                         (type :taking-pose)
                         (collision-mode :allow-all)
@@ -1062,118 +861,219 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;; HELPER FUNCTIONS
-
+;; @author Luca Krohm
 (defun get-attributes (motion)
   (case motion
-    (:aligning-height (list :action :goal-pose :object-height :object-name))
-    (:reaching (list :action :goal-pose :object-size :object-name))
-    (:vertical-motion (list :action :distance))
+    (:aligning-height (list :context :goal-pose :object-name))
+    (:reaching (list :context :goal-pose :object-name :object-size))
+    (:placing (list :context :goal-pose :object-name :object-size))
+    (:vertical-motion (list :context :distance))
     (:retracting (list :object-name :reference-frame))
     (:tilting (list :tilt-direction :tilt-angle))
     (:gripper (list :gripper-state))
-    (:taking-pose (list :pose-keyword))))
-
-
-
-
-(defun generate-context (action &key from-above)
-  (print "context")
-  ;;(break)
-  (let ((attr-list `(("action" . ,action))))
-    (when from-above
-      (setf attr-list (reverse (acons "from_above" from-above attr-list))))
-    (print attr-list)))
-
-(defun generate-context2 (action &rest key-tuple-list)
-  (let ((attr-list `(("action" . ,(keyword-to-giskard-param (intern (string action)))))))
-    (mapc (lambda (key-tuple)
-            (when (second key-tuple)
-              (setf attr-list (acons
-                               (keyword-to-giskard-param (first key-tuple))
-                               (second key-tuple)
-                               attr-list))))
-            key-tuple-list)
-    (print (reverse attr-list))))
-
-
-
-(defun keyword-to-giskard-param (key)
-  (let ((str (string-downcase (symbol-name key))))
-    (loop while (search "-" str)
-          do
-             (setf str (replace str "_" :start1 (search "-" str))))
-    str))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Robocup
+    (:taking-pose (list :pose-keyword))
+    (otherwise (error "~a is not a valid keyword" motion))))
 
 ;; @author Luca Krohm
-;; @TODO failurehandling
-;; sequence doesnt make sense yet
-;; (defun robo-open-door (&key
-;;                          ((:collision-mode ?collision-mode))
-;;                          ((:collision-object-b ?collision-object-b))
-;;                          ((:collision-object-b-link ?collision-object-b-link))
-;;                          ((:collision-object-a ?collision-object-a))
-;;                          ((:object-name ?object-name))
+(defun rel-context (motion)
+  (case motion
+    (:aligning-height (list :from-above :vertical-align))
+    (:reaching (list :object-type :object-shape :from-above :vertical-align))
+    (:placing (list :from-above :vertical-align))
+    (:vertical-motion (list :from-above))
+    (:retracting (list ))
+    (:tilting (list ))
+    (:gripper (list ))
+    (:taking-pose (list ))
+    (otherwise (error "~a is not a valid keyword" motion))))
 
-;;                        &allow-other-keys)
-  "Receives parameters from action-designator, and then executes the corresponding motions"
-  ;; (declare (type boolean ?move-base ?prefer-base ?straight-line ?precise-tracking
-  ;;                ?align-planes-left ?align-planes-right))
+;; @author Luca Krohm
+(defun get-all-attributes (motion-list)
+  (remove-duplicates (alexandria:flatten (mapcar #'get-attributes motion-list))))
 
-  ;; (exe:perform (desig:a motion
-  ;;                       (type gripper)
-  ;;                       (gripper-state "close")))
+;; @author Luca Krohm
+(defun generate-motion-sequence (motions context &rest args &key
+                                                              goal-pose
+                                                              object-name
+                                                              object-size
+                                                              tilt-direction
+                                                              tilt-angle
+                                                              reference-frame
+                                                              gripper-state
+                                                              pose-keyword
+                                                              distance)
 
-  ;; (let ((?context `(("action" . "approach-door"))))
-  ;;   (exe:perform (desig:a motion
-  ;;                         (type reaching)
-  ;;                         (collision-mode ?collision-mode)
-  ;;                         (collision-object-b ?collision-object-b)
-  ;;                         (collision-object-b-link ?collision-object-b-link)
-  ;;                         (collision-object-a ?collision-object-a)
-  ;;                         (allow-base ?move-base)
-  ;;                         (prefer-base ?prefer-base)
-  ;;                         (straight-line ?straight-line)
-  ;;                         (align-planes-left ?align-planes-left)
-  ;;                         (align-planes-right ?align-planes-right)
-  ;;                         (precise-tracking ?precise-tracking)
-  ;;                         (object-name ?handle-link)
-  ;;                         (goal-pose ?handle-pose)
-  ;;                         (context ?context))))
+  (declare (ignore goal-pose object-name object-size tilt-direction tilt-angle reference-frame gripper-state pose-keyword distance))
+  (setf args (remove-nil args))
+  (let (?motion-sequence)
+    
+    (dolist (motion motions ?motion-sequence)
+      (let* ((motion-name (case motion
+                            (:aligning-height "AlignHeight")
+                            (:reaching "Reaching")
+                            (:placing "Placing")
+                            (:vertical-motion "VerticalMotion")
+                            (:retracting "Retracting")
+                            (:tilting "Tilting")
+                            (:gripper "MoveGripper")
+                            (:taking-pose "TakePose")))
+             (motion-attributes (remove :context (get-attributes motion)))
+             (attr-list (mapcar
+                         (lambda (attr)
+                           (generate-alist (assoc attr args)))
+                         motion-attributes))
+             (motion-context (cdr (assoc motion context))))
+        (when motion-context
+          (push (generate-alist `(context . ,motion-context)) attr-list))
+        (push (intern (giskard::alist->json-string `((,motion-name . ,attr-list)))) ?motion-sequence)))
+    (setf ?motion-sequence (coerce (reverse ?motion-sequence) 'vector))))
+
+;; @author Luca Krohm
+(defun keyword-to-giskard-param (key)
+  (let ((str (string-downcase key)))
+    (setf str (substitute #\_ #\- str))
+    str))
+
+;; @author Luca Krohm
+(defun generate-context (action motions &rest arguments &key
+                                                          from-above
+                                                          neatly
+                                                          object-type
+                                                          object-shape
+                                                          vertical-align)
+  (declare (ignore from-above neatly object-type object-shape vertical-align))
+  (setf arguments (remove-nil arguments))
+  (labels ((parse-content (cont)
+             (etypecase cont
+               (cl-tf:3d-vector (giskard::to-hash-table cont))
+               (cl-tf:pose-stamped (giskard::to-hash-table cont))
+               (t cont)))
+           (generate-msg (msg-type content)
+             `(("message_type" . ,msg-type)
+               ("message" . (("content" . ,content)))))
+           (gen-context (act args)
+             (let ((attr-list `(("action" . ,(generate-msg "manipulation_msgs/ContextAction"
+                                                           (keyword-to-giskard-param act))))))
+               (dolist (arg args attr-list)
+                 (push (cons (keyword-to-giskard-param (car arg))
+                             (generate-msg (to-giskard-msg-type (car arg))
+                                           (parse-content (cdr arg))))
+                       attr-list)))))
+
+    (typecase motions
+      (list (remove nil (mapcar
+                         (lambda (motion)
+                           (let ((args (remove-if (lambda (arg)
+                                                    (not (member (car arg) (rel-context motion))))
+                                                  arguments)))
+                             (when (rel-context motion)
+                               (cons motion (reverse (gen-context action args))))))
+                         motions)))
+      (keyword (reverse (gen-context action arguments))))))
   
-  ;; (exe:perform (desig:a motion
-  ;;                       (type su-open)
-  ;;                       (object-name ?object-name)))
+;; @author Luca Krohm
+(defun to-giskard-msg-type (param)
+  (case param
+    (:from-above "manipulation_msgs/ContextFromAbove")
+    (:neatly "manipulation_msgs/ContextNeatly")
+    (:object-type "manipulation_msgs/ContextObjectType")
+    (:object-shape "manipulation_msgs/ContextObjectShape")
+    (:vertical-align "manipulation_msgs/ContextVerticalAlign")
+    (otherwise (error "Unknown parameter: ~a" param))))
+
+;; @author Luca Krohm
+(defun remove-nil (list)
+  "Remove elements with nil second element and convert to cons cells."
+  (loop for (key value) on list by #'cddr
+        when value
+          collect (cons key value)))
+
+;; @author Luca Krohm
+(defun generate-alist (alist)
+  (typecase (cdr alist)
+    (cl-tf:3d-vector `(,(keyword-to-giskard-param (car alist))
+                        . (("message_type" . "geometry_msgs/Vector3")
+                           ("message" . ,(giskard::to-hash-table (cdr alist))))))
+    (cl-tf:pose-stamped `(,(keyword-to-giskard-param (car alist))
+                            . (("message_type" . "geometry_msgs/PoseStamped")
+                               ("message" . ,(giskard::to-hash-table (cdr alist))))))
+    (t `(,(keyword-to-giskard-param (car alist)) . ,(cdr alist)))))
+
+;; @author Luca Krohm
+(defmethod yason::encode ((symbol symbol) &optional (stream *standard-output*))
+  (let ((string (string symbol)))
+    (loop for char across string do
+         (write-char char stream))
+    string))
+
+(defun get-object-type (name)
   
-  ;; (exe:perform (desig:a motion
-  ;;                       (type :retracting)
-  ;;                       (collision-mode ?collision-mode)
-  ;;                       (collision-object-b ?collision-object-b)
-  ;;                       (collision-object-b-link ?collision-object-b-link)
-  ;;                       (collision-object-a ?collision-object-a)
-  ;;                       (allow-base ?move-base)
-  ;;                       (prefer-base ?prefer-base)
-  ;;                       (straight-line ?straight-line)
-  ;;                       (align-planes-left ?align-planes-left)
-  ;;                       (align-planes-right ?align-planes-right)
-  ;;                       (precise-tracking ?precise-tracking)
-  ;;                       (tip-link t))))
+  "cup")
+
+(defun get-goal-pose (obj-name)
+  (print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+    (print "This the the get-goal-pose function in suturo-plans, which was called because you did not specify a goal pose")
+  
+  (print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+  (break)
+  (cond
+      ((search "Cereal" obj-name)  (cl-tf2::make-pose-stamped
+                                    "map" 0
+                                    (cl-tf2::make-3d-vector 2.0 -0.25 0.7)
+                                    (cl-tf2::make-quaternion 0 0 0 1)))
+
+      ((search "Milk" obj-name)  (cl-tf2::make-pose-stamped
+                                    "map" 0
+                                    (cl-tf2::make-3d-vector 2.0  -0.1 0.7)
+                                    (cl-tf2::make-quaternion 0 0 0 1)))
+
+      ((or (search "Spoon" obj-name)
+           (search "Fork" obj-name))
+      (cl-tf2::make-pose-stamped
+        "map" 0
+        (cl-tf2::make-3d-vector 2.05 0.3 0.75)
+        (cl-tf2::make-quaternion 0 0 0 1)))
+
+      ((search "Bowl" obj-name)  (cl-tf2::make-pose-stamped
+                                    "map" 0
+                                    (cl-tf2::make-3d-vector 2.0 0.15 0.775)
+                                    (cl-tf2::make-quaternion 0 0 0 1)))))
+
+(defun get-object-size (name)
+  (or (su-demos::with-knowledge-result (shape)
+          `("object_shape_workaround" ,name _ shape _ _)
+        (when (second shape)
+          (cl-tf:make-3d-vector (second shape)
+                                (third shape)
+                                (fourth shape))))
+      (cond
+        ((search "Cereal" name) (cl-tf2::make-3d-vector 0.14 0.06 0.225))
+        ((search "Milk" name) (cl-tf2::make-3d-vector 0.09 0.06 0.2))
+        ((or (search "Spoon" name)
+             (search "Fork" name))
+         (cl-tf2::make-3d-vector 0.19 0.02 0.01))
+        ((search "Bowl" name) (cl-tf2::make-3d-vector 0.16 0.16 0.05)))))
+
+(defun get-object-shape (name)
+  "cube")
+
+(defun get-from-above (name)
+  (cond
+    ((search "Cereal" name) nil)
+    ((search "Milk" name) nil)
+    ((or (search "Spoon" name)
+         (search "Fork" name))
+     T)
+    ((search "Bowl" name) T)))
+
+(defun get-neatly (name)
+  (break)
+  nil)
+
+(defun get-frame (name)
+  (su-demos::with-knowledge-result (frame)
+      `("object_shape_workaround" ,name frame _ _ _)
+    frame))
+
+

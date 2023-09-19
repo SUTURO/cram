@@ -35,43 +35,178 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defparameter *objects* '(:CerealBox :milk :spoon :bowl))
+(defparameter *objects* '(:bowl :CerealBox :milk :spoon))
 
 (defun serve-breakfast-demo(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
   
   ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
-  (with-knowledge-result (shelf table)
+  (with-knowledge-result (tableleft tableright)
       `(and ("reset_user_data")
             ("init_serve_breakfast")
-            ("has_urdf_name" object1 "open_shelf:shelf:shelf_base_center")
-            ("object_rel_pose" object1 "perceive" shelf)
+            ;;adapt the following two lines to change the pickup location
+            ("has_urdf_name" object1 "left_table:table:table_front_edge_center")
+            ("object_rel_pose" object1 "perceive" (list ("direction" "-x")) tableleft)
+            ;;adapt the following two lines to change the placing location
             ("has_urdf_name" object2 "left_table:table:table_front_edge_center")
-            ("object_rel_pose" object2 "perceive" (list ("direction" "-y")) table))
+            ("object_rel_pose" object2 "perceive" (list ("direction" "-x")) tableright))
     (print "Serving Breakfast plan started.")
     (park-robot)
     (talk-request "Hello I am Toya, i will now serve breakfast!" talk)
-
     (when (<= step 1)
-      (move-hsr (make-pose-stamped-from-knowledge-result shelf) talk)
+      ;; move to pickup location
+      (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
+      (sleep 1))
+    (perc-robot)
+    ;;(break)
+    ;; perceive objects
+    (let* (?current-object
+           (?source-object-desig
+             (desig:all object
+                        (type :breakfast))))
+      (park-robot)
+      (talk-request "I am now perceiving!" talk)
+      (exe:perform (desig:an action
+                             (type detecting)
+                             (object ?source-object-desig)))
+
+      (park-robot)
+      ;; get next object to handle
+      (with-knowledge-result (nextobject)
+          `("next_object" nextobject)
+        (print "next object:")
+        (print nextobject)
+        (break)
+        ;; loop until there is no new object and the cereal is handled
+        (loop until (string= nextobject nil)
+              do  (setf ?current-object nextobject)
+                   (with-knowledge-result (pose)
+                       `("object_pose" ,?current-object pose) 
+                     (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
+
+                     (let (?object-pose
+                           (?small-object-case (or (search "Spoon" ?current-object)
+                                                   (search "Fork" ?current-object))))
+                       (cond
+                         ((search "Bowl" ?current-object)
+                          ;;bowl i moved to the y side to be able to grasp
+                          (setf ?object-pose
+                                (make-pose-stamped-from-knowledge-result-for-bowl-breakfast pose)))
+                         (?small-object-case
+                          (setf ?object-pose
+                                (make-pose-stamped-from-knowledge-result-for-smallies-breakfast pose)))
+                         (t
+                          (setf ?object-pose
+                                (make-pose-stamped-from-knowledge-result pose))))
+                       
+                       
+
+                       (talk-request "I will now Pick up :" talk :current-knowledge-object ?current-object)
+                       (when break (break))
+                       (exe:perform (desig:an action
+                                              (type picking-up)
+                                              (object-name ?current-object)
+                                              (goal-pose ?object-pose)
+                                              (sequence-goal ?sequence-goals)
+                                              (collision-mode :allow-all)))
+                       
+                       (park-robot)
+                       
+                       ;;(call-text-to-speech-action "Moving to target location")
+                       ;; Calls knowledge to receive coordinates of the dinner table pose, then relays that pose to navigation
+                       (move-hsr (make-pose-stamped-from-knowledge-result-table-right tableright) talk)
+
+                       (when (or (search "Cereal" ?current-object)
+                                 (search "Milk" ?current-object))
+                         (with-knowledge-result (bowlname)
+                             `("has_type" bowlname ,(transform-key-to-string :bowl))
+                           (let ((?object-size (get-target-size ?current-object))
+                                 (?bowl-size (get-target-size bowlname))
+                                 (?bowl-name bowlname))
+
+                             (talk-request "I will now pour:" talk :current-knowledge-object ?current-object)
+                             (when break (break))
+                             (exe:perform (desig:an action
+                                                    (type su-pouring)
+                                                    (target-name ?bowl-name)
+                                                    (object-size ?object-size)
+                                                    (target-size ?bowl-size)
+                                                    (collision-mode :allow-all)))
+                             (park-robot)
+                             (move-hsr (make-pose-stamped-from-knowledge-result-table-right tableright) talk))))
+                       
+                       
+                       ;; places the object by executing the following motions:
+                       ;; - preparing to place the object, by lifting the arm to an appropriate ?object
+                       ;; - placing the object
+                       ;; - opening the gripper, thus releasing the object
+
+                       ;;(call-text-to-speech-action "Placing object Cereal-Box")
+                       (talk-request "I will now place: " talk :current-knowledge-object ?current-object)
+                       (when break (break))
+                       (let ((?target-pose (get-target-pos ?current-object)))
+                         (exe:perform (desig:an action
+                                                (type :placing)
+                                                (object-name ?current-object)
+                                                (goal-pose ?target-pose)
+                                                (sequence-goal ?sequence-goals)
+                                                (collision-mode :allow-all))))
+                       (talk-request "I placed the Object!" talk)
+                       (with-knowledge-result ()
+                           `("object_pose" ,?current-object ,(reformat-stamped-pose-for-knowledge (get-object-pos ?current-object)))
+                         (talk-request "I will now perceive the object again!" talk)
+                         (perc-robot)
+                         (exe:perform (desig:an action
+                                                (type detecting)
+                                                (object ?source-object-desig)))
+                         (park-robot)
+                         (with-knowledge-result (result)
+                             `("next_object" result)
+                           (setf nextobject result))))))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;; orig serve breakfast ;;;;;;;;;;;;;;;;;;;;;
+
+(defun serve-breakfast-demo-orig(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
+  
+  ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
+  (with-knowledge-result (tableleft tableright)
+      `(and ("reset_user_data")
+            ("init_serve_breakfast")
+            ;;adapt the following two lines to change the pickup location
+            ("has_urdf_name" object1 "left_table:table:table_front_edge_center")
+            ("object_rel_pose" object1 "perceive" (list ("direction" "-x")) tableleft)
+            ;;adapt the following two lines to change the placing location
+            ("has_urdf_name" object2 "left_table:table:table_front_edge_center")
+            ("object_rel_pose" object2 "perceive" (list ("direction" "-x")) tableright))
+    (print "Serving Breakfast plan started.")
+    (park-robot)
+    (talk-request "Hello I am Toya, i will now serve breakfast!" talk)
+    (when (<= step 1)
+      ;; move to pickup location
+      (move-hsr (make-pose-stamped-from-knowledge-result-table-right tableleft) talk)
       (sleep 1))
 
-   
+    ;;(break)
+    ;; perceive objects
     (let* ((?current-object nil)
            (?found-cereal nil)
            (?source-object-desig
              (desig:all object
                         (type :breakfast))))
-      (perc-robot)
+      (park-robot)
       (talk-request "I am now perceiving!" talk)
       (exe:perform (desig:an action
                              (type detecting)
                              (object ?source-object-desig)))
-      
+
+      ;; get next object to handle
       (with-knowledge-result (nextobject)
           `("next_object" nextobject)
         (print "next object:")
         (print nextobject)
-        ;; (break)
+        (break)
+        ;; loop until there is no new object and the cereal is handled
         (loop until (and (string= nextobject nil)
                          (eq ?found-cereal nil))
               do (let* ((?target-pose (get-target-pos nextobject)))
@@ -83,7 +218,7 @@
                    (print nextobject)
                    ;; (break)
                    (progn
-                     (move-hsr (make-pose-stamped-from-knowledge-result shelf) talk)
+                     (move-hsr (make-pose-stamped-from-knowledge-result-table-right tableright) talk)
                      (cond
                        ((search "CerealBox" ?current-object) (setf ?found-cereal ?current-object))
                        (t
@@ -122,19 +257,23 @@
                                      (make-pose-stamped-from-knowledge-result pose))))
                             (talk-request "I will now Pick up :" talk :current-knowledge-object ?current-object)
                             (when break (break))
-                            (exe:perform (desig:an action
-                                                   (type picking-up)
-                                                   (goal-pose ?object-pose)
-                                                   (object-size ?object-size)
-                                                   (from-above ?from-above)
-                                                   (sequence-goal ?sequence-goals)
-                                                   (collision-mode :allow-all)))))
+                            ;; (cond
+                            ;;   ((?object-pose 
+                                (exe:perform (desig:an action
+                                                                    (type picking-up)
+                                                                    (goal-pose ?object-pose)
+                                                                    (object-size ?object-size)
+                                                                    (from-above ?from-above)
+                                                                    (sequence-goal ?sequence-goals)
+                                                                    (collision-mode :allow-all)))))
+                              ;; (t t))
+                       ))
                        
                         (park-robot)
                         
                         ;;(call-text-to-speech-action "Moving to target location")
                         ;; Calls knowledge to receive coordinates of the dinner table pose, then relays that pose to navigation
-                        (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
+                        (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
                         
                         ;; places the object by executing the following motions:
                         ;; - preparing to place the object, by lifting the arm to an appropriate ?object
@@ -164,7 +303,7 @@
                               (exe:perform (desig:an action
                                                      (type detecting)
                                                      (object ?source-object-desig)))
-                              (park-robot))))))))))
+                              (park-robot))))))))
 
   (with-knowledge-result (bowlframe)
       `(and ("has_type" bowlname ,(transform-key-to-string :bowl))
@@ -184,7 +323,7 @@
                              (target-size ?bowl-size)
                              (collision-mode :allow-all)))
       (park-robot)
-      (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
+      (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
 
       (talk-request "I will now place: " talk :current-knowledge-object ?current-object)
       (when break (break))
@@ -204,7 +343,7 @@
                              (object ?source-object-desig)))
       (park-robot)
       ;; Calls knowledge to receive coordinates of the dinner table pose, then relays that pose to navigation
-      (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
+      (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
 
       
       (let ((?object-size (get-target-size "Milk")))
@@ -219,7 +358,7 @@
         (park-robot)
         
         ;; Calls knowledge to receive coordinates of the dinner table pose, then relays that pose to navigation
-        (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
+        (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
         (talk-request "I will now pour:" talk :current-knowledge-object "MilkPack")
         (when break (break))
         
@@ -231,7 +370,7 @@
                                (collision-mode :allow-all)))
         
         (park-robot)
-        (move-hsr (make-pose-stamped-from-knowledge-result table) talk)
+        (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
         (talk-request "I will now place: " talk :current-knowledge-object "MilkPack")
         (when break (break))
         (exe:perform (desig:an action
@@ -246,26 +385,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;; Hardcoded stuff for debugging ;;;;;;;;;;;;
-
-
-(defun park-robot ()
-  "Default pose"
-  (exe:perform (desig:an action
-                         (type taking-pose)
-                         (pose-keyword "park"))))
-
-(defun perc-robot ()
-  "Default pose"
-  (exe:perform (desig:an action
-                         (type taking-pose)
-                         (pose-keyword "perceive"))))
-
-(defun wait-robot ()
-  "Default pose"
-  (exe:perform (desig:an action
-                         (type taking-pose)
-                         (pose-keyword "assistance"))))
-
 
 (defun nav-zero-pos ()
   "Starting pose in IAI office lab"
@@ -289,24 +408,24 @@
   (cond
       ((search "Cereal" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
-                                    (cl-tf2::make-3d-vector 2.0 -0.25 0.7)
+                                    (cl-tf2::make-3d-vector 1.75 1.25 0.7)
                                     (cl-tf2::make-quaternion 0 0 0 1)))
 
       ((search "Milk" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
-                                    (cl-tf2::make-3d-vector 2.0  -0.1 0.7)
+                                    (cl-tf2::make-3d-vector 1.94  1.25 0.7)
                                     (cl-tf2::make-quaternion 0 0 0 1)))
 
       ((or (search "Spoon" obj-name)
            (search "Fork" obj-name))
       (cl-tf2::make-pose-stamped
         "map" 0
-        (cl-tf2::make-3d-vector 2.05 0.3 0.75)
+        (cl-tf2::make-3d-vector 2.32 1.32 0.75)
         (cl-tf2::make-quaternion 0 0 0 1)))
 
       ((search "Bowl" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
-                                    (cl-tf2::make-3d-vector 2.0 0.15 0.775)
+                                    (cl-tf2::make-3d-vector 2.15 1.3 0.775)
                                     (cl-tf2::make-quaternion 0 0 0 1)))))
 
 (defun get-object-pos (obj-name)
@@ -402,11 +521,6 @@
     ?reach-pose))
 
 
-
-;; Idea:
-;; Change Reaching to approaching to generalize that kind of motion.
-;; Planning also give the "context" to manipulation, so manipulation can differentiate
-;; between for example, picking up and pouring
 
 (defun wait-for-human-signal ()
   (cpl:seq

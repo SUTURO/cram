@@ -158,48 +158,25 @@
               (equal ?precise-tracking nil))))
 
 
-  (<- (motion-grounding ?designator (reach ?left-pose ?right-pose
-                                              ?collision-mode
-                                              ?collision-object-b
-                                              ?collision-object-b-link
-                                              ?collision-object-a
-                                              ?move-base ?prefer-base
-                                              ?align-planes-left
-                                              ?align-planes-right
-                                              ?straight-line
-                                              ?precise-tracking
-                                              ?goal-pose
-                                              ?object-size
-                                              ?object-shape
-                                              ?object-name
-                                              ?context
-                                              ))
+  (<- (motion-grounding ?designator (reach ?collision-mode
+                                           ?collision-object-b
+                                           ?collision-object-b-link
+                                           ?collision-object-a
+                                           ?goal-pose
+                                           ?object-size
+                                           ?object-shape
+                                           ?object-name
+                                           ?context
+                                           ))
     (property ?designator (:type :reaching))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
               (equal ?collision-object-b nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-b-link
-                                             ?collision-object-b-link))
+    (once (or (desig:desig-prop ?designator (:collision-object-b-link ?collision-object-b-link))
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
               (equal ?goal-pose nil)))
     (once (or (desig:desig-prop ?designator (:object-size ?object-size))
@@ -212,25 +189,15 @@
               (equal ?context nil))))
 
 
-  (<- (motion-grounding ?designator (vertical-motion ?left-pose ?right-pose
-                                              ?collision-mode
+  (<- (motion-grounding ?designator (vertical-motion ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
-                                              ?move-base ?prefer-base
-                                              ?align-planes-left
-                                              ?align-planes-right
-                                              ?straight-line
-                                              ?precise-tracking
                                               ?context
                                               ?distance
                                               ))
     (or (property ?designator (:type :vertical-motion))
         (property ?designator (:type :lifting)))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -240,40 +207,18 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:context ?context))
               (equal ?context nil)))
     (once (or (desig:desig-prop ?designator (:distance ?distance))
               (equal ?distance nil))))
 
-  (<- (motion-grounding ?designator (retract ?left-pose ?right-pose
-                                              ?collision-mode
+  (<- (motion-grounding ?designator (retract ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
-                                              ?move-base ?prefer-base
-                                              ?align-planes-left
-                                              ?align-planes-right
-                                              ?straight-line
-                                              ?precise-tracking
                                               ?tip-link
                                               ))
     (property ?designator (:type :retracting))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -283,39 +228,17 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:tip-link ?tip-link))
               (equal ?tip-link nil))))  
 
-  (<- (motion-grounding ?designator (place ?left-pose ?right-pose
-                                              ?collision-mode
+  (<- (motion-grounding ?designator (place ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
-                                              ?move-base ?prefer-base
-                                              ?align-planes-left
-                                              ?align-planes-right
-                                              ?straight-line
-                                              ?precise-tracking
                                               ?goal-pose
                                               ?context
                                               ))
     (property ?designator (:type :placing))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -325,42 +248,20 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
               (equal ?goal-pose nil)))
     (once (or (desig:desig-prop ?designator (:context ?context))
               (equal ?context nil))))
 
-  (<- (motion-grounding ?designator (align-height ?left-pose ?right-pose
-                                                  ?collision-mode
+  (<- (motion-grounding ?designator (align-height ?collision-mode
                                                   ?collision-object-b
                                                   ?collision-object-b-link
                                                   ?collision-object-a
-                                                  ?move-base ?prefer-base
-                                                  ?align-planes-left
-                                                  ?align-planes-right
-                                                  ?straight-line
-                                                  ?precise-tracking
                                                   ?goal-pose
                                                   ?object-height
                                                   ?object-name
                                                   ?context))
     (property ?designator (:type :aligning-height))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
     (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
               (equal ?collision-mode nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -370,18 +271,6 @@
               (equal ?collision-object-b-link nil)))
     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
               (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:move-base ?move-base))
-              (equal ?move-base nil)))
-    (once (or (desig:desig-prop ?designator (:prefer-base ?prefer-base))
-              (equal ?prefer-base nil)))
-    (once (or (desig:desig-prop ?designator (:straight-line ?straight-line))
-              (equal ?straight-line nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-left ?align-planes-left))
-              (equal ?align-planes-left nil)))
-    (once (or (desig:desig-prop ?designator (:align-planes-right ?align-planes-right))
-              (equal ?align-planes-right nil)))
-    (once (or (desig:desig-prop ?designator (:precise-tracking ?precise-tracking))
-              (equal ?precise-tracking nil)))
     (once (or (desig:desig-prop ?designator (:goal-pose ?goal-pose))
               (equal ?goal-pose nil)))
     (once (or (desig:desig-prop ?designator (:object-height ?object-height))
@@ -393,8 +282,7 @@
     )
 
 
-   (<- (motion-grounding ?designator (tilt ?left-pose ?right-pose
-                                              ?collision-mode
+   (<- (motion-grounding ?designator (tilt ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
@@ -403,10 +291,6 @@
                                               ?object-name
                                               ))
      (property ?designator (:type :tilting))
-     (once (or (property ?designator (:left-pose ?left-pose))
-               (equal ?left-pose nil)))
-     (once (or (property ?designator (:right-pose ?right-pose))
-               (equal ?right-pose nil)))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
                (equal ?collision-mode nil)))
      (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -423,18 +307,13 @@
      (once (or (desig:desig-prop ?designator (:object-name ?object-name))
                (equal ?object-name nil))))
 
-  (<- (motion-grounding ?designator (sequence ?left-pose ?right-pose
-                                              ?collision-mode
+  (<- (motion-grounding ?designator (sequence ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
                                               ?motion-sequence
                                               ))
      (property ?designator (:type :sequence-goal))
-     (once (or (property ?designator (:left-pose ?left-pose))
-               (equal ?left-pose nil)))
-     (once (or (property ?designator (:right-pose ?right-pose))
-               (equal ?right-pose nil)))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
                (equal ?collision-mode nil)))
      (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
@@ -447,11 +326,10 @@
      (once (or (desig:desig-prop ?designator (:motion-sequence ?motion-sequence))
                (equal ?motion-sequence nil))))
 
-  (<- (motion-grounding ?designator (take-pose ?left-pose ?right-pose
-                                              ?collision-mode
-                                              ?collision-object-b
-                                              ?collision-object-b-link
-                                              ?collision-object-a
+  (<- (motion-grounding ?designator (take-pose ?collision-mode
+                                              ;; ?collision-object-b
+                                              ;; ?collision-object-b-link
+                                              ;; ?collision-object-a
                                               ?pose-keyword
                                               ?head-pan
                                               ?head-tilt
@@ -462,19 +340,15 @@
                                               ?wrist-roll
                                               ))
      (property ?designator (:type :taking-pose))
-     (once (or (property ?designator (:left-pose ?left-pose))
-               (equal ?left-pose nil)))
-     (once (or (property ?designator (:right-pose ?right-pose))
-               (equal ?right-pose nil)))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
                (equal ?collision-mode nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
-               (equal ?collision-object-b nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-b-link
-                                              ?collision-object-b-link))
-               (equal ?collision-object-b-link nil)))
-     (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
-               (equal ?collision-object-a nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
+     ;;           (equal ?collision-object-b nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-b-link
+     ;;                                          ?collision-object-b-link))
+     ;;           (equal ?collision-object-b-link nil)))
+     ;; (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
+     ;;           (equal ?collision-object-a nil)))
     
      (once (or (desig:desig-prop ?designator (:pose-keyword ?pose-keyword))
                (equal ?pose-keyword nil)))
@@ -494,20 +368,15 @@
                (equal ?wrist-roll nil)))
     )
 
-  (<- (motion-grounding ?designator (gripper ?left-pose ?right-pose
-                                              ?collision-mode
+  (<- (motion-grounding ?designator (gripper ?collision-mode
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
                                               ?gripper-state
                                               ))
     (property ?designator (:type :gripper))
-     (once (or (property ?designator (:left-pose ?left-pose))
-               (equal ?left-pose nil)))
-     (once (or (property ?designator (:right-pose ?right-pose))
-               (equal ?right-pose nil)))
      (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
-               (equal ?collision-mode :allow-hand)))
+               (equal ?collision-mode :allow-all)))
      (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
                (equal ?collision-object-b nil)))
      (once (or (desig:desig-prop ?designator (:collision-object-b-link
@@ -542,37 +411,7 @@
               (equal ?laser-avoidance-max-x nil)))
     )
 
-;;;;;;;;;;;;;
-  (<- (motion-grounding ?designator (su-open ?left-pose ?right-pose
-                                             ?collision-mode
-                                             ?collision-object-b
-                                             ?collision-object-b-link
-                                             ?collision-object-a
-                                             ?object-name
-                                             ?context
-                                             ))
-    (property ?designator (:type :su-open))
-    (once (or (property ?designator (:left-pose ?left-pose))
-              (equal ?left-pose nil)))
-    (once (or (property ?designator (:right-pose ?right-pose))
-              (equal ?right-pose nil)))
-    (once (or (desig:desig-prop ?designator (:collision-mode ?collision-mode))
-              (equal ?collision-mode nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-b ?collision-object-b))
-              (equal ?collision-object-b nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-b-link
-                                             ?collision-object-b-link))
-              (equal ?collision-object-b-link nil)))
-    (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
-              (equal ?collision-object-a nil)))
-    (once (or (desig:desig-prop ?designator (:object-name ?object-name))
-              (equal ?object-name nil)))
-    (once (or (desig:desig-prop ?designator (:context ?context))
-              (equal ?context nil))))
-  ;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
   (<- (motion-grounding ?designator (?push-or-pull ?arm ?poses
                                                    ?joint-angle

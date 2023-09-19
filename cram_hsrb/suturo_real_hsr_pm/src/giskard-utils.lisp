@@ -1,5 +1,13 @@
 (in-package :su-real)
 
+;;; DISCLAIMER: original author of most of the functions in here is
+;;; Gayane Kazhoyan <kazhoyan@cs.uni-bremen.de>
+;;;
+;;; Code was copied from "cram/cram_external_interfaces/cram_giskard/src/collision-scene.lisp"
+;;; and is now WIP to be integrated into suturo knowledge
+;;; up until September 2023 all changes to the original code have been made by
+;;; Luca Krohm, during his time attending the suturo masters project 2022/23 
+
 ;;;;;;;;;;;;;;;;;;;;;;;; KNOWROB EVENT HANDLERS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod coe:on-event giskard-attach-object ((event cpoe:object-attached-robot-knowrob))
@@ -36,7 +44,7 @@
                       (btr:link-attached-object-names
                        (btr:get-robot-object)
                        link))))))))
-
+;; @author Gayane Kazhoyan, Luca Krohm
 (defmethod coe:on-event giskard-detach-object-after 3 ((event cpoe:object-detached-robot-knowrob))
   ;; TODO: How do we get the updated pose? manipulation sends it back maybe? or when manipulation
   ;; sends back :SUCCEEDED after placing, we update the pose to the targetpose?
@@ -66,6 +74,7 @@
     ;; (update-object-pose-in-collision-scene-knowrob (cpoe:event-object-name event))
         ))))
 
+;; @author Gayane Kazhoyan, Luca Krohm
 (defmethod coe:on-event giskard-perceived ((event cpoe:object-perceived-event-knowrob))
   (unless cram-projection:*projection-environment*
     (roslisp:with-fields ((frame (cl-transforms-stamped:frame-id cram-designators::pose cram-designators:data))
@@ -117,6 +126,7 @@
             cram-tf:*fixed-frame* 0.0 (btr:pose (btr:get-environment-object)))
      :joint-state-topic "iai_kitchen/joint_states")))
 
+;; @author Gayane Kazhoyan, Luca Krohm
 (defun update-object-pose-in-collision-scene-knowrob (object-name)
   (su-demos::with-knowledge-result (frame shape pose)
       `(and ("object_shape_workaround" ,object-name frame shape _ _)
@@ -134,6 +144,7 @@
          ;;                             btr::*mesh-files*)))
          :dimensions (cdr shape))))))
 
+;; @author Gayane Kazhoyan, Luca Krohm
 (defun add-object-to-collision-scene-knowrob (object-name)
   (su-demos::with-knowledge-result (frame shape pose)
       `(and ("object_shape_workaround" ,object-name frame shape _ _)
@@ -259,63 +270,3 @@
                          (btr:get-robot-object)
                          object-name)))))))
           (btr:objects btr:*current-bullet-world*)))
-
-
-(defun giskard-testing ()
-     (let* ((?source-object-desig
-                     (desig:an object
-                               (type :crackerbox)))
-            (?object-desig
-              (exe:perform (desig:an action
-                                     (type detecting)
-                                     (object ?source-object-desig))))
-            (?knowledge-name 
-              (roslisp:with-fields ((frame (cl-transforms-stamped:frame-id cram-designators::pose cram-designators:data))
-                                    (w0 (w cl-tf:orientation cram-designators::pose cram-designators:data))
-                                    (w1 (x cl-tf:orientation cram-designators::pose cram-designators:data))
-                                    (w2 (y cl-tf:orientation cram-designators::pose cram-designators:data))
-                                    (w3 (z cl-tf:orientation cram-designators::pose cram-designators:data))
-                                    (x (x cl-tf:origin cram-designators::pose cram-designators:data))
-                                    (y (y cl-tf:origin cram-designators::pose cram-designators:data))
-                                    (z (z cl-tf:origin cram-designators::pose cram-designators:data))
-                                    (radius (robokudo_msgs-msg::radius cram-designators::objectsize cram-designators:data))
-                                    (x-size (x_size robokudo_msgs-msg::dimensions cram-designators::objectsize cram-designators:data))
-                                    (y-size (y_size robokudo_msgs-msg::dimensions cram-designators::objectsize cram-designators:data))
-                                    (z-size (z_size robokudo_msgs-msg::dimensions cram-designators::objectsize cram-designators:data)))
-                  ?object-desig
-                (print w1)
-                (break)
-                (when (> w1 0)
-                  (let ((new-rot (cl-tf:q* (cl-tf:make-quaternion w1 w2 w3 w0) (cl-tf:make-quaternion 1 0 0 0))))
-                    (setf w0 (cl-tf:w new-rot))
-                    (setf w1 (cl-tf:x new-rot))
-                    (setf w2 (cl-tf:y new-rot))
-                    (setf w3 (cl-tf:z new-rot))
-                    ))
-                  
-                (su-demos::with-knowledge-result (name)
-                    `("create_object" name (|:| "soma" "CrackerBox")
-                            (list ,frame
-                                  (list ,(su-demos::round-for-knowrob x)
-                                        ,(su-demos::round-for-knowrob y)
-                                        ,(su-demos::round-for-knowrob z))
-                                  (list ,(su-demos::round-for-knowrob w1)
-                                        ,(su-demos::round-for-knowrob w2)
-                                        ,(su-demos::round-for-knowrob w3)
-                                        ,(su-demos::round-for-knowrob w0)))
-                            (list ("shape" ("box" ,(coerce y-size 'single-float)
-                                                  ,(coerce x-size 'single-float)
-                                                  ,(coerce z-size 'single-float)))))
-                  name)
-                (print frame))))
-       (break)
-       (add-object-to-collision-scene-knowrob ?knowledge-name)
-       (print ?knowledge-name)
-       (break)
-       (su-demos::with-knowledge-result (frame)
-           `("object_shape_workaround" ,?knowledge-name frame _ _ _)
-         (let ((?object-name frame))
-           (exe:perform (desig:an action
-                                  (type picking-up)
-                                  (object-name ?object-name)
-                                  (collision-mode :allow-all)))))))

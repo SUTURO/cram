@@ -42,6 +42,7 @@
          (cl-tf2::make-3d-vector x y z)
          (cl-tf2::make-quaternion w1 w2 w3 w4))))))
 
+;; @author Luca Krohm
 (defun reformat-stamped-pose-for-knowledge (pose)
   (roslisp:with-fields ((frame (cl-transforms-stamped:frame-id))
                           (w0 (w cl-transforms:orientation))
