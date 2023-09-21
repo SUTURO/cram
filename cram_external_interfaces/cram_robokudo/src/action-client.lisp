@@ -499,8 +499,8 @@
 
       (let* ((pose-stamped-in-whatever
                (find-pose-in-object-designator combined-properties))
-             (pose-stamped-in-map-frame
-             ;; (pose-stamped-in-map-frame-original-orientation
+             ;;(pose-stamped-in-map-frame
+             (pose-stamped-in-map-frame-original-orientation
                (if cram-tf:*fixed-frame*
                    (cram-tf:ensure-pose-in-frame
                     pose-stamped-in-whatever
@@ -508,18 +508,18 @@
                     ;; :use-current-ros-time t
                     :transformer *robokudo-tf-buffer-client*)
                    pose-stamped-in-whatever))
-             ;; (pose-stamped-in-map-frame
-             ;;   (cl-transforms-stamped:copy-pose-stamped
-             ;;    pose-stamped-in-map-frame-original-orientation
-             ;;    :orientation
-             ;;    ;; HACK
-             ;;    (if (< (cl-transforms:y
-             ;;            (cl-transforms:origin
-             ;;             pose-stamped-in-map-frame-original-orientation))
-             ;;           1.9)
-             ;;        ;; (cl-transforms:make-quaternion 1 0 0 0)
-             ;;        (cl-transforms:make-quaternion 0 0 0 1)
-             ;;        (cl-transforms:make-quaternion 0 0 1 0))))
+             (pose-stamped-in-map-frame
+               (cl-transforms-stamped:copy-pose-stamped
+                pose-stamped-in-map-frame-original-orientation
+                :orientation
+                ;; HACK
+                (if (< (cl-transforms:y
+                        (cl-transforms:origin
+                         pose-stamped-in-map-frame-original-orientation))
+                       1.9)
+                    ;; (cl-transforms:make-quaternion 1 0 0 0)
+                    (cl-transforms:make-quaternion 0 0 0 1)
+                    (cl-transforms:make-quaternion 0 0 1 0))))
              (transform-stamped-in-map-frame
                (cram-tf:pose-stamped->transform-stamped
                 pose-stamped-in-map-frame

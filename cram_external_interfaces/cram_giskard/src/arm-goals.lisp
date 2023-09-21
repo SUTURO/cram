@@ -267,7 +267,7 @@
                             'giskard_msgs-msg:constraint
                             :weight_below_ca)))))))))
 
-(defun make-tilt-constraint (tilt-direction tilt-angle
+(defun make-tilt-constraint (direction angle
                                      &key avoid-collisions-not-much)
   "Receives parameters used by manipulation. Creates Constraint of the type PlaceObject which is a classname inside the manipulation code, which is responsible for 'placing'"
   (roslisp:make-message
@@ -276,12 +276,12 @@
    "Tilting"
    :parameter_value_pair
    (giskard::alist->json-string
-    `(,@(when tilt-direction
+    `(,@(when direction
           `(("direction"
-             . ,tilt-direction)))
-      ,@(when tilt-angle
-          `(("tilt_angle"
-             . ,tilt-angle)))
+             . ,direction)))
+      ,@(when angle
+          `(("angle"
+             . ,angle)))
       
       ,@(if avoid-collisions-not-much
             `(("weight" . ,(roslisp-msg-protocol:symbol-code
@@ -332,8 +332,8 @@
                                          object-height
                                          tip-link
                                          goal-pose
-                                         tilt-direction
-                                         tilt-angle
+                                         direction
+                                         angle
                                          context
                                          motion-sequence
                                          pose-keyword
@@ -441,7 +441,7 @@
                    (when (eq action-type 'place)
                      (make-place-constraint goal-pose context))
                    (when (eq action-type 'tilt)
-                     (make-tilt-constraint tilt-direction tilt-angle))
+                     (make-tilt-constraint direction angle))
                    (when (eq action-type 'sequence)
                      (make-sequence-constraint motion-sequence))
                    (when (eq action-type 'take-pose)
@@ -634,8 +634,8 @@
                                     object-height
                                     tip-link
                                     goal-pose
-                                    tilt-direction
-                                    tilt-angle
+                                    direction
+                                    angle
                                     context
                                     motion-sequence
                                     pose-keyword
@@ -698,8 +698,8 @@
                  :object-height object-height
                  :tip-link tip-link
                  :goal-pose goal-pose
-                 :tilt-direction tilt-direction
-                 :tilt-angle tilt-angle
+                 :direction direction
+                 :angle angle
                  :context context
                  :motion-sequence motion-sequence
                  :pose-keyword pose-keyword

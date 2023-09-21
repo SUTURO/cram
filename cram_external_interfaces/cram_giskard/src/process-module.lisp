@@ -150,8 +150,8 @@
         :collision-object-b (first rest-args)
         :collision-object-b-link (second rest-args)
         :collision-object-a (third rest-args)
-        :tilt-direction (fourth rest-args)
-        :tilt-angle (fifth rest-args)
+        :direction (fourth rest-args)
+        :angle (fifth rest-args)
         :object-name (sixth rest-args)
         :action-type 'tilt
         ))
