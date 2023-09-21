@@ -14,9 +14,92 @@
 ;;;;;;;;;;;;;;;;
 
 ;;@author Felix Krause
+;;Starts the required ROS nodes.
 (defun start-ros () (roslisp-utilities:startup-ros))
 
+
+;; @author Felix Krause
+;; This function takes the tf frame of a handle and causes the robot to look around the room. Used to relocalize the robot in the door opening failure handling.
+(defun relocalize-robot (?handle)
+
+  (let ((?pose  (with-knowledge-result (result)
+                       `(and ("has_urdf_name" object ,?handle)
+                             ("object_rel_pose" object "perceive" result))
+                     (make-pose-stamped-from-knowledge-result result)))) 
+
+    ;;Uncomment this if you want the robot to look around the entire room. 
+    ;;(move-hsr (modify-pose-q ?pose 0 0 0.704 0.71))
+    
+    (move-hsr (modify-pose-q ?pose 0 0 0.704 -0.71))
+    
+    (move-hsr ?pose)))
+
+
+;; @author Felix Krause
+;; Function that swaps the quaternion values of a pose. Takes a pose and four values that represent the quaternion values that are to be swaped in the pose.
+(defun modify-pose-q (pose a b c d) 
+  (cl-tf::copy-pose-stamped
+   pose
+   :origin
+   (cl-tf::origin pose)
+   :orientation
+   (let ((quaternion (cl-tf::origin pose)))
+     (cl-tf::copy-quaternion
+      quaternion
+      :x a 
+      :y b
+      :z c
+      :w d))))
+
 ;;@author Felix Krause
+;;Parks the robot with the gripper facing forward.
+(defun prepare-robot ()
+  "Open door pose"
+  (exe:perform (desig:an action
+                         (type taking-pose)
+                         (pose-keyword "pre_align_height"))))
+
+;;@author Felix Krause
+;;Extracts the pose out of a object designator.
+(defun extract-pose (object)
+  (roslisp:with-fields 
+     ((?pose
+       (cram-designators::pose cram-designators:data))) 
+      object    
+    ?pose))
+
+
+;;@author Felix Krause
+;;Sends the query "next-object" that returns the next object to be picked up in Storing Groceries."
+(defun get-next-object-storing-groceries ()
+  (with-knowledge-result (result)
+      `("next_object" result)
+    result))
+
+;;@author Felix Krause
+;;Sends the query "object_rel_pose" that requires an object id as an argument and returns a place pose on the shelf.
+(defun get-place-pose-in-shelf (object)
+    (with-knowledge-result (result)
+      `("object_rel_pose" ,object "destination" (list) result)
+      (make-pose-stamped-from-knowledge-result result)))
+
+;;@author Felix Krause
+;;Sends the query "object_pose" that requires an object is as an argument and returns the pose required to pick up the object.
+(defun get-pick-up-pose (object)
+  (with-knowledge-result (result)
+      `("object_pose" ,object result)
+    (make-pose-stamped-from-knowledge-result-sg-pick-up result)))
+
+;;@author Felix Krause
+;;Sends the query "object_pose" that updates the position of an object in Knowledge. Requires the new pose and the object id of the object.
+(defun update-object-pose (object pose)
+  (with-knowledge-result ()
+      `("object_pose" ,object ,(reformat-stamped-pose-for-knowledge pose))
+    (print "Object Pose updated !")))
+
+
+;;@author Felix Krause
+;;Translates a Perception key that represents an object type into a Knowledge object type.
 (defun transform-key-to-string (the-key)
   
   (case the-key
@@ -186,70 +269,10 @@
 
 
 
-;;OLD KEYS
-
-;; (:KoellnMuesliKnusperHonigNuss
-;;                :breakfast-cereal)
-;;               (:muesli
-;;                :breakfast-cereal)
-;;               (:cerealbox
-;;                :cerealbox)
-;;               (:milk
-;;                :milk)
-;;               (:TunaFishCan
-;;                :TunaFishCan)
-;;               (:everything
-;;                :everything)
-;;               (:CupEcoOrange
-;;                :cup)
-;;               (:EdekaRedBowl
-;;                :bowl)
-;;               (:IkeaRedBowl
-;;                :bowl)
-;;               (:SoupSpoon
-;;                :spoon)
-;;               (:apple
-;;                :apple)
-;;               (:spoon
-;;                :spoon)
-;;               (:IkeaRedCup
-;;                :cup)
-;;               (:bowl
-;;                :bowl)
-;;               (:mustard-bottle
-;;                :mustard-bottle)
-;;               (:cup
-;;                :cup)
-;;               (:mug
-;;                :cup)
-;;               (:WeideMilchSmall
-;;                :milk)
-;;               (:BLUEPLASTICSPOON
-;;                :spoon)
-;;               (:BALEAREINIGUNGSMILCHVITAL
-;;                :balea-bottle)
-;;               (:DENKMITGESCHIRRREINIGERNATURE
-;;                :dish-washer-tabs)
-;;               (:GarnierMineralUltraDry
-;;                :deodorant)
-;;               (:DMRoteBeteSaftBio
-;;                :juice-box)
-;;               (:JeroenCup
-;;                :jeroen-cup)
-;;               (:jeroen-cup
-;;                :jeroen-cup)
-;;               (:pringles
-;;                :pringles))))
-      
-
-
-
-
 
 ;;====================================================================================================
 ;;navigation
 
-;;used in go-get-it
 ;;@author Torge Olliges    
 (defun move-hsr (nav-goal-pose-stamped &optional (talk t))
   "Receives pose `nav-goal-pose-stamped'. Lets the robot move to the given pose with a motion designator"
@@ -263,10 +286,9 @@
 
 ;;====================================================================================================
 
-;; (with-knowledge-result (a b) '(= (list 1 2) (list a b))
-;;             (print a)
-;;             (print b))
-;;@author Felix Krause, Tede von Knorre
+
+;;@author Felix Krause
+;;Planning interface with Knowledge. Takes as arguments a list of variables that the result of the query are saved into, the query to be executed and a body of lisp code where the result variables can be used in. 
 (defmacro with-knowledge-result (vars query &body body)
   `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
      (if (eq raw-response 1)
@@ -278,42 +300,21 @@
                 )
            (json-prolog:finish-query raw-response)))))
 
-
-
 ;;@author Felix Krause
+;;Function that executes a query. Package is required or errors occur. 
 (defun simple-knowledge (query &optional (package *package*))
   (print package)
   (with-safe-prolog
     (json-prolog:prolog-1 query :package package)))
 
 ;;@author Felix Krause
+;;Turns a Knowledge pose into a pose that is useable in Lisp. Takes a Knowledge pose as an argument.
 (defun make-pose-stamped-from-knowledge-result (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) (third (second result)))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
-
-;;@author Felix Krause
-(defun modified-place-pose (pose)
-  (cl-tf::copy-pose-stamped
-   pose
-   :origin
-   (let ((vector (cl-tf::origin pose)))
-     (cl-tf::copy-3d-vector
-      vector
-      :x (cl-tf::x vector)
-      :y (cl-tf::y vector) 
-      :z (- (cl-tf::z vector) 0.1))
-     :orientation
-     (cl-tf::orientation pose))))
-
-(defun make-pose-stamped-from-knowledge-result-sg-pick-up (result)
-  (cl-tf:make-pose-stamped
-   (first result) 0.0
-   (cl-tf:make-3d-vector
-    (first (second result)) (second (second result)) (third (second result)))
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (+ (third (third result)) 0.02) (fourth (third result)))))
 
 
 (defun make-pose-stamped-from-knowledge-result-table-right (result)
