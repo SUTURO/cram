@@ -37,7 +37,7 @@
 
 (defparameter *objects* '(:bowl :CerealBox :milk :spoon))
 
-(defun serve-breakfast-demo(&key (step 0) (talk t) (break nil) (?sequence-goals nil))
+(defun serve-breakfast-demo(&key (step 0) (talk nil) (break nil) (?sequence-goals nil))
   
   ;; Calls knowledge to receive coordinates of the shelf pose, then relays that pose to navigation
   (with-knowledge-result (tableleft tableright)
@@ -56,26 +56,25 @@
       ;; move to pickup location
       (move-hsr (make-pose-stamped-from-knowledge-result-table-left tableleft) talk)
       (sleep 1))
-    (perc-robot)
+    (park-robot)
     ;;(break)
     ;; perceive objects
     (let* (?current-object
            (?source-object-desig
              (desig:all object
                         (type :breakfast))))
-      (park-robot)
       (talk-request "I am now perceiving!" talk)
       (exe:perform (desig:an action
                              (type detecting)
                              (object ?source-object-desig)))
-
+   
       (park-robot)
       ;; get next object to handle
       (with-knowledge-result (nextobject)
           `("next_object" nextobject)
         (print "next object:")
         (print nextobject)
-        (break)
+        ;;(break)
         ;; loop until there is no new object and the cereal is handled
         (loop until (string= nextobject nil)
               do  (setf ?current-object nextobject)
@@ -110,7 +109,7 @@
                                               (collision-mode :allow-all)))
                        
                        (park-robot)
-                       
+                       ;; (break)
                        ;;(call-text-to-speech-action "Moving to target location")
                        ;; Calls knowledge to receive coordinates of the dinner table pose, then relays that pose to navigation
                        (move-hsr (make-pose-stamped-from-knowledge-result-table-right tableright) talk)
@@ -154,10 +153,15 @@
                        (with-knowledge-result ()
                            `("object_pose" ,?current-object ,(reformat-stamped-pose-for-knowledge (get-object-pos ?current-object)))
                          (talk-request "I will now perceive the object again!" talk)
-                         (perc-robot)
-                         (exe:perform (desig:an action
-                                                (type detecting)
-                                                (object ?source-object-desig)))
+                         (park-robot)
+                         (sleep 2)
+                         (let* ((?type (get-object-type ?current-object))
+                                (?source-object-desig
+                                 (desig:all object
+                                            (type ?type))))
+                           (exe:perform (desig:an action
+                                                  (type detecting)
+                                                  (object ?source-object-desig))))
                          (park-robot)
                          (with-knowledge-result (result)
                              `("next_object" result)
@@ -404,7 +408,7 @@
    (cl-tf2::make-3d-vector 0.7 -0.95 0)
    (cl-tf2::make-quaternion 0 0 0 1)))
 
-(defun get-target-pos (obj-name)
+(defun get-target-pos-old (obj-name)
   (cond
       ((search "Cereal" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
@@ -425,8 +429,40 @@
 
       ((search "Bowl" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
-                                    (cl-tf2::make-3d-vector 2.15 1.3 0.775)
+                                    (cl-tf2::make-3d-vector 2.2 1.3 0.775)
                                     (cl-tf2::make-quaternion 0 0 0 1)))))
+
+(defun get-target-pos (obj-name)
+  (with-knowledge-result (bowlframe)
+      `(and ("has_type" bowlname ,(transform-key-to-string :bowl))
+            ("object_shape_workaround" bowlname bowlframe _ _ _))
+    (let ((transf 
+            (cond
+              ((search "Cereal" obj-name)  (cl-tf2::make-transform-stamped
+                                            bowlframe bowlframe 0
+                                            (cl-tf2::make-3d-vector -0.4 0 0)
+                                            (cl-tf2::make-quaternion 0 0 0 1)))
+              
+              ((search "Milk" obj-name)  (cl-tf2::make-transform-stamped
+                                          bowlframe bowlframe 0
+                                          (cl-tf2::make-3d-vector -0.25 0 0)
+                                          (cl-tf2::make-quaternion 0 0 0 1)))
+              
+              ((or (search "Spoon" obj-name)
+                   (search "Fork" obj-name))
+               (cl-tf2::make-transform-stamped
+                bowlframe bowlframe 0
+                (cl-tf2::make-3d-vector 0.15 0 0.045)
+                (cl-tf2::make-quaternion 0 0 0 1)))
+              (t nil))))
+      (if (search "Bowl" obj-name)
+          (cl-tf2::make-pose-stamped
+           "map" 0
+           (cl-tf2::make-3d-vector 2.2 1.3 0.775)
+           (cl-tf2::make-quaternion 0 0 0 1))
+        (cram-tf:apply-transform
+         (cl-tf:lookup-transform cram-tf:*transformer* "map" bowlframe)
+         transf :result-as-pose-or-transform :pose)))))
 
 (defun get-object-pos (obj-name)
   (cond
@@ -462,7 +498,6 @@
        (cl-tf2::make-3d-vector 0.19 0.02 0.01))
       ((search "Bowl" obj-name) (cl-tf2::make-3d-vector 0.16 0.16 0.05))))
       
-       
 (defun get-frontal-placing (obj-name)
   (cond
       ((search "Cereal" obj-name) nil)
@@ -481,7 +516,14 @@
        nil)
       ((search "Bowl" obj-name) nil)))
 
-
+(defun get-object-type (name)
+  (cond
+        ((search "Cereal" name) :cerealbox)
+        ((search "Milk" name) :milkpack)
+        ((or (search "Spoon" name)
+             (search "Fork" name))
+         :spoon)
+        ((search "Bowl" name) :bowl)))
 
 
     

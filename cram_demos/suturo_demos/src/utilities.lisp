@@ -296,6 +296,17 @@
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
 ;;@author Felix Krause
+(defun make-pose-stamped-from-knowledge-result-perc-outliers (result)
+  (let ((shifted (cond
+                 ((> (first (second result)) 1.5) (- (first (second result)) 0.02))
+                 ((< (first (second result)) 1.5) (+ (first (second result)) 0.02)))))
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    shifted (second (second result)) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
+
+;;@author Felix Krause
 (defun modified-place-pose (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
@@ -345,7 +356,7 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-   (first (second result))  (- (second (second result)) 0.12) (+ (third (second result)) 0.01))
+   (first (second result))  (+ (second (second result)) 0.02) (+ (third (second result)) 0.00))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
 
 
@@ -372,7 +383,7 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (+ (first (second result)) 0.00) (+ (second (second result)) 0.04) (- (third (second result)) 0.01))
+    (+ (first (second result)) 0.08) (+ (second (second result)) 0.05) 0.73);;(- (third (second result)) 0.01))
    (cl-tf:make-identity-rotation)))
 
 
