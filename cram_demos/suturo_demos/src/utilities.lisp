@@ -383,7 +383,7 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (+ (first (second result)) 0.08) (+ (second (second result)) 0.05) 0.73);;(- (third (second result)) 0.01))
+    (+ (first (second result)) 0.08) (+ (second (second result)) 0.05) 0.72);;(- (third (second result)) 0.01))
    (cl-tf:make-identity-rotation)))
 
 
