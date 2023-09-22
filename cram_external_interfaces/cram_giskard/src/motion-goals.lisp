@@ -52,8 +52,8 @@
                                          object-height
                                          tip-link
                                          goal-pose
-                                         tilt-direction
-                                         tilt-angle
+                                         direction
+                                         angle
                                          context
                                          motion-sequence
                                          gripper-state
@@ -90,7 +90,7 @@
                    (when (eq action-type 'place)
                      (make-place-constraint goal-pose context))
                    (when (eq action-type 'tilt)
-                     (make-tilt-constraint tilt-direction tilt-angle))
+                     (make-tilt-constraint direction angle))
                    (when (eq action-type 'sequence)
                      (make-sequence-constraint motion-sequence))
                    (when (eq action-type 'gripper)
@@ -189,8 +189,8 @@
                                     object-height
                                     tip-link
                                     goal-pose
-                                    tilt-direction
-                                    tilt-angle
+                                    direction
+                                    angle
                                     context
                                     motion-sequence
                                     gripper-state
@@ -214,8 +214,8 @@
                  :object-height object-height
                  :tip-link tip-link
                  :goal-pose goal-pose
-                 :tilt-direction tilt-direction
-                 :tilt-angle tilt-angle
+                 :direction direction
+                 :angle angle
                  :context context
                  :motion-sequence motion-sequence
                  :gripper-state gripper-state

@@ -268,17 +268,17 @@
                             ?goal-pose)))
         (equal ?goal-pose nil))
 
-    (-> (member :tilt-angle ?attributes)
-        (or (desig:desig-prop ?designator (:tilt-angle ?tilt-angle))
-            (and (format "WARNING: Please specify the tilt-angle.~%")
+    (-> (member :angle ?attributes)
+        (or (desig:desig-prop ?designator (:angle ?angle))
+            (and (format "WARNING: Please specify the angle for tilting.~%")
                  (fail)))
-        (equal ?tilt-angle nil))
+        (equal ?angle nil))
 
-    (-> (member :tilt-direction ?attributes)
-        (or (desig:desig-prop ?designator (:tilt-direction ?tilt-direction))
-            (and (format "WARNING: Please specify the tilt-direction.~%")
+    (-> (member :direction ?attributes)
+        (or (desig:desig-prop ?designator (:direction ?direction))
+            (and (format "WARNING: Please specify the direction for tilting.~%")
                  (fail)))
-        (equal ?tilt-direction nil))
+        (equal ?direction nil))
 
     (-> (member :reference-frame ?attributes)
         (or (desig:desig-prop ?designator (:reference-frame ?reference-frame))
@@ -332,8 +332,8 @@
     (lisp-fun su-real::generate-motion-sequence ?motions ?context :goal-pose ?goal-pose
                                                                   :object-name ?object-name
                                                                   :object-size ?object-size
-                                                                  :tilt-angle ?tilt-angle
-                                                                  :tilt-direction ?tilt-direction
+                                                                  :angle ?angle
+                                                                  :direction ?direction
                                                                   :reference-frame ?reference-frame
                                                                   :gripper-state ?gripper-state
                                                                   :pose-keyword ?pose-keyword

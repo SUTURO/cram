@@ -286,8 +286,8 @@
                                               ?collision-object-b
                                               ?collision-object-b-link
                                               ?collision-object-a
-                                              ?tilt-direction
-                                              ?tilt-angle
+                                              ?direction
+                                              ?angle
                                               ?object-name
                                               ))
      (property ?designator (:type :tilting))
@@ -300,10 +300,10 @@
                (equal ?collision-object-b-link nil)))
      (once (or (desig:desig-prop ?designator (:collision-object-a ?collision-object-a))
                (equal ?collision-object-a nil)))
-     (once (or (desig:desig-prop ?designator (:tilt-direction ?tilt-direction))
-               (equal ?tilt-direction nil)))
-     (once (or (desig:desig-prop ?designator (:tilt-angle ?tilt-angle))
-              (equal ?tilt-angle nil)))
+     (once (or (desig:desig-prop ?designator (:direction ?direction))
+               (equal ?direction nil)))
+     (once (or (desig:desig-prop ?designator (:angle ?angle))
+              (equal ?angle nil)))
      (once (or (desig:desig-prop ?designator (:object-name ?object-name))
                (equal ?object-name nil))))
 

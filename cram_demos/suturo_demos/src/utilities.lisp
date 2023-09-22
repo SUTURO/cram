@@ -13,6 +13,19 @@
      (- (get-universal-time) start)))
 ;;;;;;;;;;;;;;;;
 
+;;@author Felix Krause, Tede von Knorre
+;;Planning interface with Knowledge. Takes as arguments a list of variables that the result of the query are saved into, the query to be executed and a body of lisp code where the result variables can be used in. 
+(defmacro with-knowledge-result (vars query &body body)
+  `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
+     (if (eq raw-response 1)
+         (error "Knowledge query failed at the macro with-knowledge-result")
+         (unwind-protect
+              (let ,(loop for x in vars
+                          collect `(,x (fix-prolog-string (cdr (assoc ',(match-prolog-symbol x (find-package :common-lisp-user)) (car raw-response))))))
+                ,@body
+                )
+           (json-prolog:finish-query raw-response)))))
+
 ;;@author Felix Krause
 ;;Starts the required ROS nodes.
 (defun start-ros () (roslisp-utilities:startup-ros))
@@ -287,18 +300,7 @@
 ;;====================================================================================================
 
 
-;;@author Felix Krause, Tede von Knorre
-;;Planning interface with Knowledge. Takes as arguments a list of variables that the result of the query are saved into, the query to be executed and a body of lisp code where the result variables can be used in. 
-(defmacro with-knowledge-result (vars query &body body)
-  `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
-     (if (eq raw-response 1)
-         (error "Knowledge query failed at the macro with-knowledge-result")
-         (unwind-protect
-              (let ,(loop for x in vars
-                          collect `(,x (fix-prolog-string (cdr (assoc ',(match-prolog-symbol x (find-package :common-lisp-user)) (car raw-response))))))
-                ,@body
-                )
-           (json-prolog:finish-query raw-response)))))
+
 
 ;;@author Felix Krause
 ;;Function that executes a query. Package is required or errors occur. 
@@ -315,7 +317,6 @@
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) (third (second result)))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
-
 
 (defun make-pose-stamped-from-knowledge-result-table-right (result)
   (cl-tf:make-pose-stamped
@@ -351,7 +352,7 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-   (first (second result))  (- (second (second result)) 0.12) (+ (third (second result)) 0.01))
+   (first (second result))  (+ (second (second result)) 0.02) (+ (third (second result)) 0.00))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
 
 
@@ -377,7 +378,7 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (+ (first (second result)) 0.00) (+ (second (second result)) 0.04) (- (third (second result)) 0.01))
+    (+ (first (second result)) 0.08) (+ (second (second result)) 0.05) 0.72);;(- (third (second result)) 0.01))
    (cl-tf:make-identity-rotation)))
 
 
@@ -683,65 +684,6 @@
            (?obj (subseq (string-trim "#" ?obj-trim) 0 ?obj-end)))
       ?obj)))
 
-;;;;;;;;;;;;
-;; VANESSA -----------------------------------------------------------------END
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;; Testing stuff ;;;;;;;;;;;;;;;;;;;;;;
-
-(defun robocup-pick-test ()
-
-  (with-knowledge-result (placeshelf pickuptable)
-      `(and ("reset_user_data")
-            ("init_storing_groceries")
-            ("has_urdf_name" object1 "pantry:pantry:shelf_base_center")
-            ("object_rel_pose" object1 "perceive" placeshelf)
-            ("has_urdf_name" object2 "storing_groceries_table:storing_groceries_table:table_center")
-            ("object_rel_pose" object2 "perceive" pickuptable))
-
-    (loop
-      (park-robot)
-      (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
-      (perc-robot)
-
-      (let* ((?source-object-desig
-               (desig:an object
-                         (type :everything)))
-             (?source-perceived-object-desig
-               (exe:perform (desig:an action
-                                      (type detecting)
-                                      (object ?source-object-desig)))))
-        
-             ;;Extracts pose from the return value of the detecting Designator.
-             (roslisp:with-fields 
-                 ((?pose
-                   (cram-designators::pose cram-designators:data)))
-                 ?source-perceived-object-desig
-
-                  (su-demos::with-knowledge-result (frame)
-                      `(and ("next_object" nextobject)
-                            ("object_shape_workaround" nextobject frame _ _ _))
-                            
-                    (let* ((?object-size (get-robo-object-size frame)))
-                      
-                      
-                      (exe:perform (desig:an action
-                                             (type :picking-up)
-                                             (goal-pose ?pose)
-                                             (object-size ?object-size)
-                                            ;; (sequence-goal ?sequence-goals)
-                                             (collision-mode :allow-all)))))
-
-                 (move-hsr (make-pose-stamped-from-knowledge-result pickuptable))
-                 (park-robot)
-                 (call-text-to-speech-action "Please catch the object")
-                 (sleep 2)
-                 (exe:perform (desig:a motion
-                                       (type gripper)
-                                       (gripper-state "open"))))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 ;; Robot poses
 ;; @author Luca Krohm
 (defun park-robot ()
@@ -781,53 +723,3 @@
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "carry"))))
-
-;; autogeneration functions
-;; @author Luca Krohm
-(defun motions->sequence-desig (motions)
-  "Receives a motion list in the form of '(:some :motion :keywords :like :reaching), then generates a sequence goal designator which is ready to be copy and pasted"
-  (let* ((attribs (su-real::get-all-attributes motions))
-         (motion-string (string-downcase (format nil ":~{~a~^ :~}" motions)))
-         (info "Copy and paste the following designator into your code and adjust the variables where needed:")
-         (des-str '("(exe:perform"
-                    "(desig:an action"
-                    "(type sequence-goal)"
-                    "(action ?action)"))
-         (att-str (mapcar (lambda (attr)
-                             (string-downcase (format nil "(~a ?~a)" attr attr)))
-                          (remove :context attribs)))
-         (mot-str (push (format nil "(motions (~a))" motion-string) att-str)))
-    (format t "~a~%" info)
-    (format t "~{~%~a~^ ~}" des-str)
-    (format t "~{~%~a~^ ~}))~%~%" mot-str)))
-
-;; @author Luca Krohm
-(defun attrib->desig-rule (attrib &optional (type :inference))
- "Receives a rule in the form of am :keyword and a optional type :inference, :mandatory or :context, then generates a designator rule which is ready to be copy and pasted"
-  (case type
-      (:inference
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(-> (member :~a ?attributes)~%" att-str)
-         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
-         (format t "?~a)))~%" att-str)
-         (format t "(equal ?~a nil))~%" att-str)))
-      (:mandatory
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(-> (member :~a ?attributes)~%" att-str)
-         (format t "(or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(and (format \"WARNING: Please specify the ~a.\")~%" att-str)
-         (format t "(fail)))~%")
-         (format t "(equal ?~a nil))~%" att-str)))
-      (:context
-       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
-              (att-str (string-downcase attrib)))
-         (format t "~a~%~%" info)
-         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
-         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
-         (format t "?~a)))~%" att-str)))))
-

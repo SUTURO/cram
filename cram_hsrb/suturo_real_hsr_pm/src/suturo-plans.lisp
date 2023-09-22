@@ -31,10 +31,11 @@
                                    (collision-mode ?collision-mode)
                                    (object-name ?object-name)))
              (su-demos::perc-robot)
+             (sleep 2)
              ;; add "looking" to old object-position before perceiving again
              (let* ((?source-object-desig
                       (desig:an object
-                                (type ?object-type)))
+                                (type :milkpack)))
                     ;; detect object and save the return value
                     (?object-desig
                       (exe:perform (desig:an action
@@ -78,34 +79,40 @@
           ;; so far we only ever grasp from above when picking up a very small object, ie a spoon
           ;; in which case the joint-state failurehandling fails. to prevent that case I added
           ;; the following if statement
-          (if (assoc "from_above" ?context :test #'string=)
-              (exe:perform (desig:a motion
-                                    (type gripper)
-                                    (gripper-state "close")))
-              (cpl:pursue
-                (cpl:seq
-                  (exe:perform (desig:a motion
-                                        (type gripper)
-                                        (gripper-state "close")))
-                  ;; sleep to give the failurehandling a chance to abort
-                  (sleep 3)
-                  (su-demos::call-text-to-speech-action "I was able to grasp the object"))
-                (cpl:seq
-                  (exe:perform
-                   (desig:an action
-                             (type monitoring-joint-state)
-                             (joint-name "hand_l_proximal_joint")))
-                  (su-demos::call-text-to-speech-action "Failed to grasp the object, retrying")
-                  ;; sleep to make sure toya finishes her sentence
-                  (sleep 1)
-                  (cpl:fail 'common-fail:gripper-closed-completely
-                            :description "Object slipped"))))
+          (cond
+            ((assoc "from_above" ?context :test #'string=)
+             (exe:perform (desig:a motion
+                                   (type gripper)
+                                   (gripper-state "close")))
+             (exe:perform (desig:a motion
+                                   (type :lifting)
+                                   (collision-mode ?collision-mode)
+                                   (distance 0.15)
+                                   (context ?context))))
+            (t (cpl:pursue
+                 (cpl:seq
+                   (exe:perform (desig:a motion
+                                         (type gripper)
+                                         (gripper-state "close")))
+                   ;; sleep to give the failurehandling a chance to abort
+                   (sleep 3)
+                   (su-demos::call-text-to-speech-action "I was able to grasp the object"))
+                 (cpl:seq
+                   (exe:perform
+                    (desig:an action
+                              (type monitoring-joint-state)
+                              (joint-name "hand_l_proximal_joint")))
+                   ;;(su-demos::call-text-to-speech-action "Failed to grasp the object, retrying")
+                   ;; sleep to make sure toya finishes her sentence
+                   (sleep 1)
+                   (cpl:fail 'common-fail:gripper-closed-completely
+                             :description "Object slipped")))
           
-          
-          (exe:perform (desig:a motion
-                                (type :lifting)
-                                (collision-mode ?collision-mode)
-                                (context ?context)))
+               (exe:perform (desig:a motion
+                                     (type :lifting)
+                                     (collision-mode ?collision-mode)
+                                     (distance 0.03)
+                                     (context ?context)))))
 
           (exe:perform (desig:a motion
                                 (type :retracting)
@@ -724,10 +731,12 @@
                                (cl-transforms:make-3d-vector
                                 0
                                 (/ (+ (cl-transforms:y ?target-size)
-                                      (cl-transforms:y ?object-size))
+                                      (cl-transforms:y ?object-size)
+                                      0.04)
                                    2)
                                 (/ (+ (cl-transforms:z ?target-size)
-                                      (cl-transforms:z ?object-size))
+                                      (cl-transforms:z ?object-size)
+                                      0.005)
                                    2))
                                (cl-tf2::make-quaternion 0 0 0 1)))
          ;; applies the relative pour pose transform to the object transform, and
@@ -760,13 +769,13 @@
 
       (exe:perform (desig:a motion
                             (type tilting)
-                            (tilt-direction "right")
+                            (direction "right")
                             (collision-mode ?collision-mode)))
       
 
       (exe:perform (desig:a motion
                             (type tilting)
-                            (tilt-angle 0.0d0)
+                            (angle 0.0d0)
                             (collision-mode ?collision-mode)))
 
       
@@ -786,7 +795,7 @@
                     (motions ?motions)
                     (goal-pose ?pour-pose)
                     (object-size ?object-size)
-                    (tilt-direction "right")
+                    (direction "right")
                     (object-name ?target-name))))
 
        (let ((?motions (list :tilting :retracting)))
@@ -798,7 +807,7 @@
                     (action "pouring")
                     (motions ?motions)
                     (reference-frame "hand_gripper_tool_frame")
-                    (tilt-angle 0.0d0)
+                    (angle 0.0d0)
                     (object-name ?target-name)))))))
 
 
@@ -867,7 +876,7 @@
     (:placing (list :context :goal-pose :object-name :object-size))
     (:vertical-motion (list :context :distance))
     (:retracting (list :object-name :reference-frame))
-    (:tilting (list :tilt-direction :tilt-angle))
+    (:tilting (list :direction :angle))
     (:gripper (list :gripper-state))
     (:taking-pose (list :pose-keyword))
     (otherwise (error "~a is not a valid keyword" motion))))
@@ -894,14 +903,14 @@
                                                               goal-pose
                                                               object-name
                                                               object-size
-                                                              tilt-direction
-                                                              tilt-angle
+                                                              direction
+                                                              angle
                                                               reference-frame
                                                               gripper-state
                                                               pose-keyword
                                                               distance)
 
-  (declare (ignore goal-pose object-name object-size tilt-direction tilt-angle reference-frame gripper-state pose-keyword distance))
+  (declare (ignore goal-pose object-name object-size direction angle reference-frame gripper-state pose-keyword distance))
   (setf args (remove-nil args))
   (let (?motion-sequence)
     
@@ -1005,8 +1014,13 @@
     string))
 
 (defun get-object-type (name)
-  
-  "cup")
+  (cond
+        ((search "Cereal" name) "cerealbox")
+        ((search "Milk" name) "milkpack")
+        ((or (search "Spoon" name)
+             (search "Fork" name))
+         "spoon")
+        ((search "Bowl" name) "bowl")))
 
 (defun get-goal-pose (obj-name)
   (print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -1014,7 +1028,7 @@
     (print "This the the get-goal-pose function in suturo-plans, which was called because you did not specify a goal pose")
   
   (print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-  (break)
+  ;;(break)
   (cond
       ((search "Cereal" obj-name)  (cl-tf2::make-pose-stamped
                                     "map" 0
@@ -1066,12 +1080,64 @@
     ((search "Bowl" name) T)))
 
 (defun get-neatly (name)
-  (break)
-  nil)
+  (cond
+    ((search "Cereal" name) t)
+    ((search "Milk" name) t)
+    ((or (search "Spoon" name)
+         (search "Fork" name))
+     t)
+    ((search "Bowl" name) T)))
 
 (defun get-frame (name)
   (su-demos::with-knowledge-result (frame)
       `("object_shape_workaround" ,name frame _ _ _)
     frame))
 
+;; autogeneration functions
+;; @author Luca Krohm
+(defun motions->sequence-desig (motions)
+  "Receives a motion list in the form of '(:some :motion :keywords :like :reaching), then generates a sequence goal designator which is ready to be copy and pasted"
+  (let* ((attribs (su-real::get-all-attributes motions))
+         (motion-string (string-downcase (format nil ":~{~a~^ :~}" motions)))
+         (info "Copy and paste the following designator into your code and adjust the variables where needed:")
+         (des-str '("(exe:perform"
+                    "(desig:an action"
+                    "(type sequence-goal)"
+                    "(action ?action)"))
+         (att-str (mapcar (lambda (attr)
+                             (string-downcase (format nil "(~a ?~a)" attr attr)))
+                          (remove :context attribs)))
+         (mot-str (push (format nil "(motions (~a))" motion-string) att-str)))
+    (format t "~a~%" info)
+    (format t "~{~%~a~^ ~}" des-str)
+    (format t "~{~%~a~^ ~}))~%~%" mot-str)))
 
+;; @author Luca Krohm
+(defun attrib->desig-rule (attrib &optional (type :inference))
+ "Receives a rule in the form of am :keyword and a optional type :inference, :mandatory or :context, then generates a designator rule which is ready to be copy and pasted"
+  (case type
+      (:inference
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:mandatory
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(-> (member :~a ?attributes)~%" att-str)
+         (format t "(or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(and (format \"WARNING: Please specify the ~a.\")~%" att-str)
+         (format t "(fail)))~%")
+         (format t "(equal ?~a nil))~%" att-str)))
+      (:context
+       (let* ((info "Copy and paste the following inference rule into your designator and adjust the variables where needed:")
+              (att-str (string-downcase attrib)))
+         (format t "~a~%~%" info)
+         (format t "(once (or (desig:desig-prop ?designator (:~a ?~a))~%" att-str att-str)
+         (format t "(lisp-fun su-real::get-~a ?ADJUST-INFERENCE-VAR-HERE~%" att-str)
+         (format t "?~a)))~%" att-str)))))
