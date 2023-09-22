@@ -88,7 +88,7 @@
 (defun get-pick-up-pose (object)
   (with-knowledge-result (result)
       `("object_pose" ,object result)
-    (make-pose-stamped-from-knowledge-result-sg-pick-up result)))
+    (make-pose-stamped-from-knowledge-result result)))
 
 ;;@author Felix Krause
 ;;Sends the query "object_pose" that updates the position of an object in Knowledge. Requires the new pose and the object id of the object.
@@ -287,7 +287,7 @@
 ;;====================================================================================================
 
 
-;;@author Felix Krause
+;;@author Felix Krause, Tede von Knorre
 ;;Planning interface with Knowledge. Takes as arguments a list of variables that the result of the query are saved into, the query to be executed and a body of lisp code where the result variables can be used in. 
 (defmacro with-knowledge-result (vars query &body body)
   `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))

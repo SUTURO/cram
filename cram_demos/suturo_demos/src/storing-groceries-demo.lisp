@@ -72,7 +72,7 @@
                          (?handle-link-right handle-link-right))
                     
                     (case what-door
-                      ;;TODO: UPDATE JOINT STATE OF THE SHELF DOORS!
+ 
                       (:left
                        (talk-request "I will now open the left door of the shelf!" talk)
                        ;;Open the shelf.

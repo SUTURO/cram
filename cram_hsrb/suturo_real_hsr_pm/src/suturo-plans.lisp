@@ -265,9 +265,7 @@
 
 
 ;; @author Felix Krause, Luca Krohm
-;; @TODO failurehandling
 ;; Failure Handling technische Präsentation Felix.
-;; sequence doesnt make sense yet
 (defun open-door (&key
                     ((:collision-mode ?collision-mode))
                     ((:collision-object-b ?collision-object-b))
@@ -341,7 +339,7 @@
                                "Some manipulation failure happened: ~a"
                                e)
                       (cpl:do-retry grasping-retries
-                        (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping)) 
+                        (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :gripping)) 
                         (print ?reaching-pose)
                         (su-real::open-gripper :effort 1)
                         (cpl:with-retry-counters ((bumping-retries 4))
@@ -411,7 +409,7 @@
                          (exe:perform
                           (desig:an action
                                     (type monitoring-joint-state)
-                                    (joint-angle-threshold -0.9)
+                                    (joint-angle-threshold -1.1)
                                     (joint-name "hand_l_proximal_joint")))))
                  ))
 
@@ -504,7 +502,7 @@
                                             "Some manipulation failure happened: ~a"
                                             e)
                           (cpl:do-retry grasping-retries
-                            (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :bumping)) 
+                            (setf ?reaching-pose (modify-pose ?reaching-pose base-distance :gripping)) 
                             (print ?reaching-pose)
                             (su-real::open-gripper :effort 1)
                             (cpl:with-retry-counters ((bumping-retries 4))
@@ -571,7 +569,7 @@
                          (exe:perform
                           (desig:an action
                                     (type monitoring-joint-state)
-                                    (joint-angle-threshold -0.9)
+                                    (joint-angle-threshold -1.1)
                                     (joint-name "hand_l_proximal_joint"))))) 
 
 

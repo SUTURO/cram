@@ -159,7 +159,6 @@
                                      &key avoid-collisions-not-much)
   "Receives parameters used by manipulation. Creates Constraint of the type PreparePlacing which is a classname inside the manipulation code, which is responsible for 'preparing-placing'"
   (print context)
-  (break)
   (roslisp:make-message
    'giskard_msgs-msg:constraint
    :type
