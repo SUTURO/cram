@@ -51,7 +51,7 @@
 (defun make-giskard-goal (&key
                             constraints joint-constraints cartesian-constraints
                             collisions
-                            (goal-type ;:plan_only
+                            (goal-type ;;:plan_only
                                        :plan_and_execute_and_cut_off_shaking
                                        ))
   (roslisp:make-message

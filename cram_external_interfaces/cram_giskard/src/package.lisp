@@ -36,6 +36,8 @@
    ;; arm-goals
    #:call-arm-cartesian-action
    #:call-arm-joint-action
+   #:call-arm-motion-action
+   #:call-take-pose-action
    ;; base-goals
    #:call-base-action
    ;; torso-goals
@@ -53,8 +55,12 @@
    #:reset-collision-scene
    ;; process-module
    #:giskard-pm
-   ;;custom
+   ;; custom
    #:call-custom-action
    #:call-custom-gripper-action
    #:pick-up
+
+   ;; suturo
+   #:call-arm-motion-action
+   #:call-take-pose-action
    ))

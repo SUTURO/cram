@@ -3,16 +3,116 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;time
+;; @author Luca Krohm
 (defmacro measure-time (&body body)
+  ;; log the current time
   `(let ((start (get-universal-time)))
+     ;; execute the body, usually your plan
      ,@body
+     ;; measure the time it took to execute the plan
      (- (get-universal-time) start)))
 ;;;;;;;;;;;;;;;;
 
-;;@author Felix Krause
-(defun start-ros () (roslisp-utilities:startup-ros))
+;;@author Felix Krause, Tede von Knorre
+;;Planning interface with Knowledge. Takes as arguments a list of variables that the result of the query are saved into, the query to be executed and a body of lisp code where the result variables can be used in. 
+(defmacro with-knowledge-result (vars query &body body)
+  `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
+     (if (eq raw-response 1)
+         (error "Knowledge query failed at the macro with-knowledge-result")
+         (unwind-protect
+              (let ,(loop for x in vars
+                          collect `(,x (fix-prolog-string (cdr (assoc ',(match-prolog-symbol x (find-package :common-lisp-user)) (car raw-response))))))
+                ,@body
+                )
+           (json-prolog:finish-query raw-response)))))
 
 ;;@author Felix Krause
+;;Starts the required ROS nodes.
+(defun start-ros () (roslisp-utilities:startup-ros))
+
+
+;; @author Felix Krause
+;; This function takes the tf frame of a handle and causes the robot to look around the room. Used to relocalize the robot in the door opening failure handling.
+(defun relocalize-robot (?handle)
+
+  (let ((?pose  (with-knowledge-result (result)
+                       `(and ("has_urdf_name" object ,?handle)
+                             ("object_rel_pose" object "perceive" result))
+                     (make-pose-stamped-from-knowledge-result result)))) 
+
+    ;;Uncomment this if you want the robot to look around the entire room. 
+    ;;(move-hsr (modify-pose-q ?pose 0 0 0.704 0.71))
+    
+    (move-hsr (modify-pose-q ?pose 0 0 0.704 -0.71))
+    
+    (move-hsr ?pose)))
+
+
+;; @author Felix Krause
+;; Function that swaps the quaternion values of a pose. Takes a pose and four values that represent the quaternion values that are to be swaped in the pose.
+(defun modify-pose-q (pose a b c d) 
+  (cl-tf::copy-pose-stamped
+   pose
+   :origin
+   (cl-tf::origin pose)
+   :orientation
+   (let ((quaternion (cl-tf::origin pose)))
+     (cl-tf::copy-quaternion
+      quaternion
+      :x a 
+      :y b
+      :z c
+      :w d))))
+
+;;@author Felix Krause
+;;Parks the robot with the gripper facing forward.
+(defun prepare-robot ()
+  "Open door pose"
+  (exe:perform (desig:an action
+                         (type taking-pose)
+                         (pose-keyword "pre_align_height"))))
+
+;;@author Felix Krause
+;;Extracts the pose out of a object designator.
+(defun extract-pose (object)
+  (roslisp:with-fields 
+     ((?pose
+       (cram-designators::pose cram-designators:data))) 
+      object    
+    ?pose))
+
+
+;;@author Felix Krause
+;;Sends the query "next-object" that returns the next object to be picked up in Storing Groceries."
+(defun get-next-object-storing-groceries ()
+  (with-knowledge-result (result)
+      `("next_object" result)
+    result))
+
+;;@author Felix Krause
+;;Sends the query "object_rel_pose" that requires an object id as an argument and returns a place pose on the shelf.
+(defun get-place-pose-in-shelf (object)
+    (with-knowledge-result (result)
+      `("object_rel_pose" ,object "destination" (list) result)
+      (make-pose-stamped-from-knowledge-result result)))
+
+;;@author Felix Krause
+;;Sends the query "object_pose" that requires an object is as an argument and returns the pose required to pick up the object.
+(defun get-pick-up-pose (object)
+  (with-knowledge-result (result)
+      `("object_pose" ,object result)
+    (make-pose-stamped-from-knowledge-result result)))
+
+;;@author Felix Krause
+;;Sends the query "object_pose" that updates the position of an object in Knowledge. Requires the new pose and the object id of the object.
+(defun update-object-pose (object pose)
+  (with-knowledge-result ()
+      `("object_pose" ,object ,(reformat-stamped-pose-for-knowledge pose))
+    (print "Object Pose updated !")))
+
+
+;;@author Felix Krause
+;;Translates a Perception key that represents an object type into a Knowledge object type.
 (defun transform-key-to-string (the-key)
   
   (case the-key
@@ -182,74 +282,14 @@
 
 
 
-;;OLD KEYS
-
-;; (:KoellnMuesliKnusperHonigNuss
-;;                :breakfast-cereal)
-;;               (:muesli
-;;                :breakfast-cereal)
-;;               (:cerealbox
-;;                :cerealbox)
-;;               (:milk
-;;                :milk)
-;;               (:TunaFishCan
-;;                :TunaFishCan)
-;;               (:everything
-;;                :everything)
-;;               (:CupEcoOrange
-;;                :cup)
-;;               (:EdekaRedBowl
-;;                :bowl)
-;;               (:IkeaRedBowl
-;;                :bowl)
-;;               (:SoupSpoon
-;;                :spoon)
-;;               (:apple
-;;                :apple)
-;;               (:spoon
-;;                :spoon)
-;;               (:IkeaRedCup
-;;                :cup)
-;;               (:bowl
-;;                :bowl)
-;;               (:mustard-bottle
-;;                :mustard-bottle)
-;;               (:cup
-;;                :cup)
-;;               (:mug
-;;                :cup)
-;;               (:WeideMilchSmall
-;;                :milk)
-;;               (:BLUEPLASTICSPOON
-;;                :spoon)
-;;               (:BALEAREINIGUNGSMILCHVITAL
-;;                :balea-bottle)
-;;               (:DENKMITGESCHIRRREINIGERNATURE
-;;                :dish-washer-tabs)
-;;               (:GarnierMineralUltraDry
-;;                :deodorant)
-;;               (:DMRoteBeteSaftBio
-;;                :juice-box)
-;;               (:JeroenCup
-;;                :jeroen-cup)
-;;               (:jeroen-cup
-;;                :jeroen-cup)
-;;               (:pringles
-;;                :pringles))))
-      
-
-
-
-
 
 ;;====================================================================================================
 ;;navigation
 
-;;used in go-get-it
 ;;@author Torge Olliges    
 (defun move-hsr (nav-goal-pose-stamped &optional (talk t))
   "Receives pose `nav-goal-pose-stamped'. Lets the robot move to the given pose with a motion designator"
-  (talk-request "Take care, I will now move!" talk)
+  ;;(talk-request "Take care, I will now move!" talk)
   (let* ((?successfull-pose (try-movement-stamped-list
                              (list nav-goal-pose-stamped))))
     (exe:perform 
@@ -258,50 +298,51 @@
               (pose ?successfull-pose)))))
 
 ;;====================================================================================================
-;;knowledge
-
-;; (with-knowledge-result (a b) '(= (list 1 2) (list a b))
-;;             (print a)
-;;             (print b))
-;;@author Tede von Knorre, Felix Krause
-(defmacro with-knowledge-result (vars query &body body)
-  `(let ((raw-response (simple-knowledge ,query (find-package :common-lisp-user))))
-     (if (eq raw-response 1)
-         (error "Knowledge query failed at the macro with-knowledge-result")
-         (unwind-protect
-              (let ,(loop for x in vars
-                          collect `(,x (fix-prolog-string (cdr (assoc ',(match-prolog-symbol x (find-package :common-lisp-user)) (car raw-response))))))
-                ,@body
-                )
-           (json-prolog:finish-query raw-response)))))
 
 
 
-;;@author Tede von Knorre, Felix Krause
+
+;;@author Felix Krause
+;;Function that executes a query. Package is required or errors occur. 
 (defun simple-knowledge (query &optional (package *package*))
   (print package)
   (with-safe-prolog
     (json-prolog:prolog-1 query :package package)))
 
 ;;@author Felix Krause
+;;Turns a Knowledge pose into a pose that is useable in Lisp. Takes a Knowledge pose as an argument.
 (defun make-pose-stamped-from-knowledge-result (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) (third (second result)))
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
-  )
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+(defun make-pose-stamped-from-knowledge-result-table-right (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (- (second (second result)) 0.3) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
+
+
+(defun make-pose-stamped-from-knowledge-result-table-left (result)
+  (cl-tf:make-pose-stamped
+   (first result) 0.0
+   (cl-tf:make-3d-vector
+    (first (second result)) (+ (second (second result)) 0.3) (third (second result)))
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
+
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (first (second result)) (second (second result)) 0.7125000 )
-   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))
-  )
+   (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result)))))
 
-;;@author Felix Krause
+
+
 (defun make-pose-stamped-from-knowledge-result-for-smallies-breakfast (result)
   (let ((height (cond
                   ((> (third (second result)) 1.12000) 1.13500)
@@ -311,34 +352,33 @@
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (first (second result)) (second (second result)) height)
+   (first (second result))  (+ (second (second result)) 0.02) (+ (third (second result)) 0.00))
    (cl-tf:make-quaternion (first (third result)) (second (third result)) (third (third result)) (fourth (third result))))))
 
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (+ (first (second result)) 0.00) (second (second result)) (- (third (second result)) 0.02))
-   (cl-tf:make-identity-rotation))
-  )
+   (cl-tf:make-identity-rotation)))
 
-;;@author Felix Krause
+
 (defun make-pose-stamped-from-knowledge-result-for-mug (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
     (- (first (second result)) 0.0) (+ (second (second result)) 0.02) 0.76000)
-   (cl-tf:make-identity-rotation))
-  )
+   (cl-tf:make-identity-rotation)))
 
-;;@author Felix Krause
+
+
 (defun make-pose-stamped-from-knowledge-result-for-bowl-breakfast (result)
   (cl-tf:make-pose-stamped
    (first result) 0.0
    (cl-tf:make-3d-vector
-    (+ (first (second result)) 0.00) (+ (second (second result)) 0.04) (- (third (second result)) 0.01))
+    (+ (first (second result)) 0.08) (+ (second (second result)) 0.05) 0.72);;(- (third (second result)) 0.01))
    (cl-tf:make-identity-rotation)))
 
 
@@ -502,13 +542,6 @@
                                       (btr:get-environment-object))))
       (t (error "Please enter a valid openable object"))))
 
-(defmethod exe-perform-type ((action-type (eql :reaching)) &key (arm :left) ?object)
-        (exe:perform
-         (desig:an action
-                   (type reaching)
-                   (object ?object)
-                   )))
-
 ;;;;;;;;;;;;;;
 ;; BTR-Utility
 
@@ -601,44 +634,44 @@
 ;; VANESSA ---------------------------------------------------------------------
 
 
-
-(defun human-assist (talk)
-  ;little bit different, talk, then move you arm, then open gripper otherwise she hits herself sometimes
-  (talk-request "I will need some help from the human,i will now move my arm, please be care: " talk)
-  ;;this can also be used for bowl
+;; @author Vanessa (Robocup), Luca Krohm
+(defun human-assist (talk &key (object nil))
+  (talk-request "I will need some help from the human,i will now move my arm, please be careful: " talk)
   (cpl:seq
+    ;; First move the robot into the "waiting" pose
     (wait-robot)
+    ;; then open the gripper
     (exe:perform (desig:a motion
                           (type gripper-motion)
                           (:open-close :open)
                           (effort 0.1))))
-  ;;todo what if we dont find the plate?
-  (talk-request "Please give me the Plate,
-When you are ready poke the white part of my hand." talk)
+  ;; give instructions
+  (talk-request "When the object is between my fingers, push down my hand." talk)
+  (talk-request "Please give me the object: " talk :current-knowledge-object object)
   
   ;;waiting for human
-    (exe:perform
-     (desig:an action
-               (type monitoring-joint-state)
-               (joint-name "wrist_flex_joint")))
+  (exe:perform
+   (desig:an action
+             (type monitoring-joint-state)
+             (joint-name "wrist_flex_joint")))
   
-   (talk-request "Closing the Gripper, thank you." talk)
+  (talk-request "Closing the Gripper, thank you." talk)
   ;;closing gripper
   (exe:perform (desig:a motion
                         (type gripper-motion)
                         (:open-close :close)
                         (effort 0.1))))
 
-
-
+;; @author Vanessa (Robocup)
 (defun talk-request (talk-string talk &key (current-knowledge-object nil))
   "Use this function as follow (talk-string 'I will now pick up ' t/n :current-knowledge-object 'http...#bowl_34123')"
   ;;just added a when around it so we can decide if toya should be silent
- (let* ((talkery talk-string))
-  (when current-knowledge-object
-    (setf talkery (concatenate 'string talk-string  (trim-knowledge-string current-knowledge-object))))
-  (when talk (call-text-to-speech-action talkery))))
+  (let* ((talkery talk-string))
+    (when current-knowledge-object
+      (setf talkery (concatenate 'string talk-string  (trim-knowledge-string current-knowledge-object))))
+    (when talk (call-text-to-speech-action talkery))))
 
+;; @author Vanessa (Robocup), Luca Krohm
 (defun trim-knowledge-string (current-knowledge-object)
   "trims the knowledge name, when it is with http"
   (let* ((?obj-start (or (search "#" current-knowledge-object)
@@ -651,96 +684,8 @@ When you are ready poke the white part of my hand." talk)
            (?obj (subseq (string-trim "#" ?obj-trim) 0 ?obj-end)))
       ?obj)))
 
-
-
-(defun extract-percept-msg-obj-type-to-string (?list-of-objects)
-  ;;to-do if u found 2 of the same maybe delee and say 2?
-  ;;loop over the objects get the description out of it and make it as string
-  (mapcar (lambda (percept-object)
-            (roslisp:with-fields
-                ((description
-                  (cram-designators:description)))
-                percept-object
-              (cl::write-to-string
-               (second
-                (second description)))))
-          ?list-of-objects))
-
-
-
-;; (let *((?test-place-pose
-;;            (cl-transforms-stamped:make-pose-stamped
-;;             cram-tf:*fixed-frame*
-;;             0.0
-;;             (cl-transforms:make-3d-vector 1.0 0.0 0.5)
-;;             (cl-transforms:make-quaternion 0 0 0.0 1))))
-;;                   (exe:perform (desig:an action
-;;                                  (type :placing-cart)
-;;                                  (goal-pose ?cereal-target-pose)
-
-
-;; (defun place-object (?arm ?target-pose-as-list
-;;                      &key ?left-grasp ?right-grasp ?object-placed-on ?object-to-place ?attachment)
-;;   (let ((?target-pose (ensure-pose-stamped ?target-pose-as-list)))
-
-;;       (exe:perform 
-;;        (desig:an action
-;;                  (type placing)
-;;                  (arm ?arm)
-;;                  (desig:when ?object-to-place
-;;                    (object ?object-to-place))
-;;                  (desig:when ?right-grasp
-;;                    (right-grasp ?right-grasp))
-;;                  (desig:when ?left-grasp
-;;                    (left-grasp ?left-grasp))
-;;                  (target (desig:a location
-;;                                   (desig:when ?object-placed-on
-;;                                     (on ?object-placed-on))
-;;                                   (desig:when ?object-to-place
-;;                                     (for ?object-to-place))
-;;                                   (desig:when ?attachment
-;;                                     (attachment ?attachment))
-;;                                   (pose ?target-pose)))))))
-
-;;;;;;;;;;;;
-;; VANESSA -----------------------------------------------------------------END
-
-
-;;;;;;;;;;; VIZBOX ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;@author Tim Rienits
-;; Print on VizBox what the Robot is saying.
-(defun vizbox-robot-says (message)
-
-    (let ((pub (roslisp:advertise "robot_text" "std_msgs/String")))
-        (sleep 1)
-        (roslisp:publish-msg pub :data (format nil message)))
-  )
-
-;;@author Tim Rienits
-;; Print on VizBox what the robot has heard the operator say.
-(defun vizbox-robot-heard (message)
-  
-    (let ((pub (roslisp:advertise "operator_text" "std_msgs/String")))
-
-        (sleep 1)
-        (roslisp:publish-msg pub :data (format nil message)))
-  )
-
-;;@author Tim Rienits
-;; Sets the current step of the plan to new_step (starts at 0).
-(defun vizbox-set-step (new_step)
-
-    (let ((pub (roslisp:advertise "challenge_step" "std_msgs/UInt32")))
-
-        (sleep 1)
-        (roslisp:publish-msg pub :data new_step))
-  )
-
-;; Luca
-
-
-
+;; Robot poses
+;; @author Luca Krohm
 (defun park-robot ()
   "Default pose"
     (exe:perform (desig:a motion
@@ -752,12 +697,13 @@ When you are ready poke the white part of my hand." talk)
                         (pose-keyword "park"))))
 
 (defun pre-align-height-robot ()
+  "Pose which the robot should take before calling 'aligning-height', in order to make sure she does not hit herself"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "pre_align_height"))))
 
 (defun perc-robot ()
-  "Default pose"
+  "Perceive pose"
     (exe:perform (desig:a motion
                         (type gripper-motion)
                         (:open-close :close)
@@ -767,14 +713,13 @@ When you are ready poke the white part of my hand." talk)
                         (pose-keyword "perceive"))))
 
 (defun wait-robot ()
-  "Default pose"
+  "Assist pose"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "assistance"))))
 
 (defun carry-robot ()
-  "Default pose"
+  "Carry pose"
   (exe:perform (desig:an action
                         (type taking-pose)
                         (pose-keyword "carry"))))
-
