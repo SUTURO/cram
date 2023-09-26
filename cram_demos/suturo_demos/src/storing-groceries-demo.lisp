@@ -258,7 +258,7 @@
 
     (exe:perform (desig:an action
                            (type opening-door)
-                           (joint-angle -0.7)
+                           (joint-angle -0.9)
                            (handle-pose ?pose)
                            (handle-link "iai_kitchen/shelf:shelf:shelf_door_left:handle")
                            (tip-link t)

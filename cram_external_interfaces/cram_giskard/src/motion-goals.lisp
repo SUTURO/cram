@@ -221,10 +221,17 @@
                  :gripper-state gripper-state
                  :distance distance)
    :action-timeout action-timeout
+   :check-goal-function (lambda (result status)
+                            (declare (ignore result))
+                            (when (or (not status)
+                                      (member status '(:preempted :aborted :timeout)))
+                              (make-instance
+                               'common-fail:environment-manipulation-goal-not-reached
+                               :description "Giskard action failed."))))
    ;; :check-goal-function (lambda (result status)
    ;;                        (declare (ignore result status))
    ;;                        (or (ensure-arm-motion-goal-reached
    ;;                             goal-pose-left cram-tf:*robot-left-tool-frame*)
    ;;                            (ensure-arm-motion-goal-reached
    ;;                             goal-pose-right cram-tf:*robot-right-tool-frame*)))
-   ))
+   )

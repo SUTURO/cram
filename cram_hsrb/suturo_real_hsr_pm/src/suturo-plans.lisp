@@ -310,16 +310,16 @@
                                      (collision-object-b-link ?collision-object-b-link)
                                      (collision-object-a ?collision-object-a)
                                      (tip-link t)))
-               ;;Park robot
-               (su-demos::prepare-robot)
+               ;; ;;Park robot
+               ;; (su-demos::prepare-robot)
                
-               ;;Move to the original position
-               (su-demos::with-knowledge-result (result)
-                   `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                         ("object_rel_pose" object "perceive" result))
-                 (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-               (sleep 2)
-               (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+               ;; ;;Move to the original position
+               ;; (su-demos::with-knowledge-result (result)
+               ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+               ;;           ("object_rel_pose" object "perceive" result))
+               ;;   (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+               ;; (sleep 2)
+               ;; (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
                (cpl:retry))))
         
         (let ((?context `(("action" . "door-opening"))))
@@ -364,16 +364,16 @@
                                                          (collision-object-a ?collision-object-a)
                                                          (tip-link t)))
 
-                                   ;;Park robot
-                                   (su-demos::prepare-robot)
+                                   ;; ;;Park robot
+                                   ;; (su-demos::prepare-robot)
 
-                                   ;;Move to the original position
-                                   (su-demos::with-knowledge-result (result)
-                                       `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                                             ("object_rel_pose" object "perceive" result))
-                                     (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-                                   (sleep 5)
-                                   (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+                                   ;; ;;Move to the original position
+                                   ;; (su-demos::with-knowledge-result (result)
+                                   ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                                   ;;           ("object_rel_pose" object "perceive" result))
+                                   ;;   (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+                                   ;; (sleep 5)
+                                   ;; (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
                                    (cpl:retry))))
 
 
@@ -473,16 +473,16 @@
                                               (tip-link t)))
 
 
-                        ;;Park robot
-                        (su-demos::prepare-robot)
+                        ;; ;;Park robot
+                        ;; (su-demos::prepare-robot)
 
-                        ;;Move to the original position
-                        (su-demos::with-knowledge-result (result)
-                            `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                                  ("object_rel_pose" object "perceive" result))
-                          (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-                        (sleep 5)
-                        (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+                        ;; ;;Move to the original position
+                        ;; (su-demos::with-knowledge-result (result)
+                        ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                        ;;           ("object_rel_pose" object "perceive" result))
+                        ;;   (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+                        ;; (sleep 5)
+                        ;; (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
                         (cpl:retry)
                         )))
                  (let ((?context `(("action" . "door-opening"))))
@@ -528,16 +528,16 @@
                                                              (tip-link t)))
 
 
-                                       ;;Park robot
-                                       (su-demos::prepare-robot)
+                                       ;; ;;Park robot
+                                       ;; (su-demos::prepare-robot)
 
-                                       ;;Move to the original position
-                                       (su-demos::with-knowledge-result (result)
-                                           `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
-                                                 ("object_rel_pose" object "perceive" result))
-                                         (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
-                                       (sleep 5)
-                                       (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
+                                       ;; ;;Move to the original position
+                                       ;; (su-demos::with-knowledge-result (result)
+                                       ;;     `(and ("has_urdf_name" object "shelf:shelf:shelf_base_center")
+                                       ;;           ("object_rel_pose" object "perceive" result))
+                                       ;;   (su-demos::move-hsr (su-demos::make-pose-stamped-from-knowledge-result result)))
+                                       ;; (sleep 5)
+                                       ;; (su-demos::relocalize-robot "shelf:shelf:shelf_base_center")
                                        (cpl:retry)
                                        )))
 
@@ -583,6 +583,7 @@
                             (arm :left)
                             (collision-mode :allow-all)
                             (collision-object-b-link ?handle-link)
+                            (handle-link ?handle-link)
                             (joint-angle ?joint-angle)))))
 
     (exe:perform (desig:a motion
@@ -590,24 +591,24 @@
                           (gripper-state "neutral")))
 
 
-    (exe:perform (desig:a motion
-                          (type :retracting)
-                          (collision-mode ?collision-mode)
-                          (collision-object-b ?collision-object-b)
-                          (collision-object-b-link ?collision-object-b-link)
-                          (collision-object-a ?collision-object-a)
-                          (object-name ?handle-link)
-                          (goal-pose ?handle-pose)))
+    ;; (exe:perform (desig:a motion
+    ;;                       (type :retracting)
+    ;;                       (collision-mode ?collision-mode)
+    ;;                       (collision-object-b ?collision-object-b)
+    ;;                       (collision-object-b-link ?collision-object-b-link)
+    ;;                       (collision-object-a ?collision-object-a)
+    ;;                       (object-name ?handle-link)
+    ;;                       (goal-pose ?handle-pose)))
   
-  (exe:perform (desig:a motion
-                        (type gripper)
-                        (gripper-state "close")))
+  ;; (exe:perform (desig:a motion
+  ;;                       (type gripper)
+  ;;                       (gripper-state "close")))
   
-  (exe:perform (desig:a motion
-                        (type pulling)
-                        (arm :left)
-                        (collision-object-b-link ?handle-link)
-                        (joint-angle ?joint-angle)))
+  ;; (exe:perform (desig:a motion
+  ;;                       (type pulling)
+  ;;                       (arm :left)
+  ;;                       (collision-object-b-link ?handle-link)
+  ;;                       (joint-angle ?joint-angle)))
 
   (exe:perform (desig:a motion
                         (type gripper)
@@ -615,10 +616,12 @@
 
   ;; tiplink t because we dont want to retract the whole robot and risk getting stuck on the door.
   ;; instead we just want to retract the hand from the door
-  (exe:perform (desig:a motion
-                        (type :retracting)
-                        (collision-mode ?collision-mode)
-                        (tip-link t)))))
+  ;; (exe:perform (desig:a motion
+  ;;                       (type :retracting)
+  ;;                       (collision-mode ?collision-mode)
+  ;;                       (tip-link t))
+  ;;              )
+    ))
 
 
 
@@ -632,7 +635,7 @@
       (let ((vector (cl-tf::origin pose)))
         (cl-tf::copy-3d-vector
          vector
-         :x (- (cl-tf::x vector) 0.015)
+         :x (- (cl-tf::x vector) 0.018)
          :y (cl-tf::y vector) 
          :z (cl-tf::z vector)))
       :orientation

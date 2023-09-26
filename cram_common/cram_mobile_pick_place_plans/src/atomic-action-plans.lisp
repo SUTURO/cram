@@ -510,7 +510,7 @@ equate resulting designator to the original one."
    (desig:a motion
             (type monitoring-joint-state)
             (joint-name ?joint-name)
-            (joint-angle-threshold ?joint-angle-threshold)
+            (joint-angle-threshold -0.6)
             (desig:when ?function
               (function ?function)))))
 

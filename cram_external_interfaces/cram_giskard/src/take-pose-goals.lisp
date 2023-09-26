@@ -140,6 +140,18 @@
                  :wrist-flex wrist-flex
                  :wrist-roll wrist-roll)
    :action-timeout action-timeout
+   :check-goal-function (lambda (result status)
+                          (declare (ignore result))
+                          (when (or (not status)
+                                    (member status '(:preempted :aborted :timeout)))
+                            (make-instance
+                             'common-fail:environment-manipulation-goal-not-reached
+                             :description "Giskard action failed.")))
+   
+
+
+
+   
    ;; :check-goal-function (lambda (result status)
    ;;                        (declare (ignore result status))
    ;;                        (or (ensure-take-pose-goal-reached
