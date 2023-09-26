@@ -1,5 +1,123 @@
 (in-package :gpsr-demo)
 
+
+(defparameter *nlp-to-knowledge-rooms* '())
+
+(defparameter *instruction-point* (cl-tf:make-pose-stamped
+                                   "map" 0.0
+                                   (cl-tf:make-3d-vector 1.227 0.365 0.0)
+                                   (cl-tf:make-quaternion 0.0 0.0 0.7017 0.7017)))
+
+(defun origin-point-of-frame (?frame)
+  (cl-tf:make-pose-stamped
+   ?frame 0.0
+   (cl-tf:make-3d-vector 0.0 0.0 0.0)
+   (cl-tf:make-quaternion 0.0 0.0 0.7017 0.7017)))
+  
+
+(defun get-living-room-string ()
+  (cut:var-value '|?Room|
+                 (cut:lazy-car (json-prolog:prolog-simple "is_living_room(Room)"))))
+
+(defun check-if-room-exists (?keyword-room)
+  "compare keyword-room with rooms knowledge knows and return iri"
+  ;;get all rooms
+  (let* ((?living-room-iri (cut:var-value '|?Room|
+                                          (cut:lazy-car
+                                           (json-prolog:prolog-simple "is_living_room(Room)."))))
+         (?kitchen-iri (cut:var-value '|?Room|
+                                          (cut:lazy-car
+                                           (json-prolog:prolog-simple "is_kitchen(Room)."))))
+         (?study-iri (cut:var-value '|?Room|
+                                          (cut:lazy-car
+                                           (json-prolog:prolog-simple "is_study_room(Room)."))))
+         (?bedroom-iri (cut:var-value '|?Room|
+                                          (cut:lazy-car
+                                           (json-prolog:prolog-simple "is_bedroom(Room)."))))
+         (?room-list (list ?living-room-iri ?kitchen-iri ?study-iri ?bedroom-iri))
+         (?result))
+    (if (search (remove #\- (string ?keyword-room)) (string-upcase (string ?kitchen-iri)))
+        (setf ?result ?kitchen-iri))
+    (if (search (remove #\- (string ?keyword-room)) (string-upcase (string ?living-room-iri)))
+        (setf ?result ?living-room-iri))
+    (if (search (remove #\- (string ?keyword-room)) (string-upcase (string ?study-iri)))
+        (setf ?result ?study-iri))
+    (if (search (remove #\- (string ?keyword-room)) (string-upcase (string ?bedroom-iri)))
+        (setf ?result ?bedroom-iri))
+    ?result))
+
+(defun pose-of-knowrob-object (?object-iri)
+  "gets an object iri, returns pose-stamped relative to self"
+  (let* ((?pose-obj (cut:var-value '|?Pose|
+                                   (cut:lazy-car (json-prolog:prolog-simple
+                                                  (concatenate 'string "object_pose("
+                                                               (string ?object-iri) ",Pose).")))))
+         (?frame (remove #\' (string (first ?pose-obj))))
+         (?vector (coerce (second ?pose-obj) 'list))
+         (?quaternion (coerce (third ?pose-obj) 'list)))
+    ;;make pose stamped
+    (cl-tf:make-pose-stamped
+     ?frame 0.0
+     (cl-tf:make-3d-vector (first ?vector) (second ?vector) (third ?vector))
+     (cl-tf:make-quaternion (first ?quaternion) (second ?quaternion) (third ?quaternion) (fourth ?quaternion)))))
+
+(defun pose-for-perceiving-object (?object-iri)
+  "gets an object iri, returns pose-stamped relative to self"
+  (let* ((?pose-obj (cut:var-value '|?Pose|
+                                   (cut:lazy-car (json-prolog:prolog-simple
+                                                  (concatenate 'string "object_rel_pose("
+                                                               (string ?object-iri)
+                                                               ", perceive, [direction('-x')], Pose).")))))
+         (?frame (remove #\' (string (first ?pose-obj))))
+         (?vector (coerce (second ?pose-obj) 'list))
+         (?quaternion (coerce (third ?pose-obj) 'list)))
+    ;;make pose stamped
+    (cl-tf:make-pose-stamped
+     ?frame 0.0
+     (cl-tf:make-3d-vector (first ?vector) (second ?vector) (third ?vector))
+     (cl-tf:make-quaternion (first ?quaternion) (second ?quaternion) (third ?quaternion) (fourth ?quaternion)))))
+
+(defun obj-of-type (?type)
+  "returns an object-knowrob-iri which is based on the given type of soma obj"
+  ;;TODO account for lists of same object as return
+  (let* ((?object-soma-iri (cut:var-value '|?Obj|
+                                     (cut:lazy-car (json-prolog:prolog-simple
+                                                    (concatenate 'string "has_type(Obj, soma:'"
+                                                                 (prologify ?type)"').")))))
+         (?object-suturo-iri (cut:var-value '|?Obj|
+                                     (cut:lazy-car (json-prolog:prolog-simple
+                                                    (concatenate 'string "has_type(Obj, suturo:'"
+                                                                 (prologify ?type)"').")))))
+         (?result-iri nil))
+    
+    (if (eq ?object-suturo-iri '|?Obj|) 
+        (setf ?result-iri ?object-soma-iri)
+        (setf ?result-iri ?object-suturo-iri))
+    ?result-iri))
+
+
+
+(defun get-obj-in-room (?object-type-key ?room-key)
+  "Returns the object-iri of an object of the given type within a room"
+  (let* ((?room-iri (string (check-if-room-exists ?room-key)))
+         (?object-iri (string (cut:var-value '|?Obj|
+                                     (cut:lazy-car (json-prolog:prolog-simple
+                                                    (concatenate 'string "has_type(Obj, soma:'"
+                                                                 (prologify ?object-type-key)"')."))))))
+         (?obj-in-room-p (json-prolog:prolog-simple
+                        (concatenate 'string "is_inside_of(" ?object-iri ", " ?room-iri ").")))
+         (?result nil))
+    
+    (if ?obj-in-room-p
+        (setf ?result (pose-for-perceiving-object ?object-iri)))
+    ?result))
+         
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
 ;;;; Dependencies Functions
 (defun make-pose (reference-frame pose)
   (cl-transforms-stamped:make-pose-stamped
@@ -69,8 +187,12 @@
    (cl-transforms:make-identity-rotation)))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;Mapping Between KnowRob and NLP;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; object knowledge
+
 ;; nlp-name cram-name category df-room df-loc-in-room
 (defparameter *gpsr-objects* '((:apple :apple :fruits :living-room :bookcase)      
                                (:bag :bag :container :living-room :end-table)

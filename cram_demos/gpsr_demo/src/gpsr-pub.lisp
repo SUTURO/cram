@@ -11,19 +11,20 @@
 
 ;;ugly. keep one. 
 (defun nlp-feedback (command)
-  "Periodically print a string message on the /chatter topic"
-  (let ((pub (roslisp:advertise "CRAMpub" "std_msgs/String" :latch nil)))    
+  "print info on CRAMpub topic for NLP interaction"
+  (let ((pub (roslisp:advertise "/CRAMpub" "std_msgs/String" :latch nil)))
+    ;;nlp spams if latched since it re-creates the subscriber for wait-for    
     (roslisp:publish-msg pub :data (format nil command))))
          
 ;;TODO the speaker might be not necessary at all
-(defun hsrtospeak ()
+(defun nlp-speaks()
   (setf *hsr-speaker-subscriber*
         (roslisp:subscribe "NLP_say" "std_msgs/String" #'hsrspeaks-callback-function)))
 
 (defun hsrspeaks-callback-function (message)
   (roslisp:with-fields (data) message  
     (let ((?tospeak data))
-      (print ?tospeak)
+      ;;(print ?tospeak)
       (su-demos::call-text-to-speech-action ?tospeak)
       )))
 

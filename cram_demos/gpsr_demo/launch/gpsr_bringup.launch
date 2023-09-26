@@ -2,11 +2,11 @@
 <launch>
   <arg name="publish_environment" default="true" />
   <arg name="env_model_yaml" default="rw_lab_master_2023.yaml" /> <!--rw_suturocup or rw_lab_master_2022 -->
-  <arg name="upload_hsrb" default="false" /> <!-- Set true if robot has publishes faulty robot_description -->
-  <arg name="publish_joint_state" default="false" />
+  <arg name="upload_hsrb" default="true" /> <!-- Set true if robot has publishes faulty robot_description -->
+  <arg name="publish_joint_state" default="true" />
   <arg name="upload_map" default="true" />
   <arg name="run_snap_map" default="false" />
-  <arg name="use_rviz" default="false"/>
+  <arg name="use_rviz" default="true"/>
 
   
  

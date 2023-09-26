@@ -25,7 +25,17 @@
                                                 (pose ?pose)))))))
     (return-from navigate-to-location "navigate")))
 
-
+;; (defun navigate-to-room(?pose) ;;; input keywords... give atleast one input and set other :nil (room or location-nr-furt) e.g (navigate-to-location :nil :kitchen) or (navigate-to-location :side-table :nil)
+;;   (cpl:with-failure-handling
+;;       ((common-fail:navigation-low-level-failure (e)
+;;          (roslisp:ros-warn (pp-plans navigate)
+;;                            "Low-level navigation failed: ~a~%.Ignoring anyway." e)
+;;          (return-from navigate-to-location "fail")))    
+;;        (exe:perform (desig:an action
+;;                      (type going)
+;;                      (target (desig:a location
+;;                               (pose ?pose))))))
+;;   (return-from navigate-to-location "navigate"))
 ;;***************************************************************************************************************************************************
 ;;; SEARCHING-object or person  (?object ?person ?location ?location)
 ;; plan depends on  navigation-to-location 

@@ -5,7 +5,7 @@
   (init-plan-subscriber)
   (init-plan-details-subscriber)
   (init-nlp-feedback-subscriber)
-  (hsrtospeak) ;; TODO this shouldn't be necessary. allows NLP to talk through CRAM
+  (nlp-speaks) ;; TODO this shouldn't be necessary. allows NLP to talk through CRAM
   ;(su-demos::init-text-to-speech-action-client) ;;maybe remove, not sure
   ;(hsrtospeak) ;;TODO remove probably? summarize talker and feedback?
 )
@@ -30,3 +30,7 @@
   (init-plan-subscriber)
   (init-plan-details-subscriber)
   (init-nlp-feedback-subscriber))
+
+(defun init-test-perception()
+  (roslisp:start-ros-node "perccram")
+  (make-robokudo-action-client))

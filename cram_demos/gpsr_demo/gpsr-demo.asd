@@ -2,6 +2,7 @@
   :depends-on (roslisp-utilities ; for ros-init-function
                actionlib
                actionlib_msgs-msg
+               cram-simple-actionlib-client
 
                cl-transforms
                cl-transforms-stamped
@@ -64,6 +65,7 @@
                tmc_control_msgs-msg
                suturo-demos
                gpsr_nlp-msg
+               suturo-real-hsr-pm
                )
   
   :components
@@ -71,12 +73,16 @@
             :components
             ((:file "package")            
              (:file "utils" :depends-on ("package"))
+             (:file "marker-publisher" :depends-on ("package"))
              (:file "gpsr-knowledge" :depends-on ("package"))
              (:file "gpsr-subscribers" :depends-on ("package"))
+             (:file "human-perception-interface" :depends-on ("package"))
              (:file "setup" :depends-on ("package"))
              (:file "gpsr-plans" :depends-on ("package"))
              (:file "gpsr-ln" :depends-on ("package"))
              (:file "gpsr-pub" :depends-on ("package"))
              (:file "nlp-testing" :depends-on ("package"))
+             (:file "navigation-plans" :depends-on ("package"))
+             (:file "searching-plans" :depends-on ("package"))
              (:file "gpsr-clean-plans" :depends-on ("package"))
              (:file "gpsr-demo" :depends-on ("package"))))))

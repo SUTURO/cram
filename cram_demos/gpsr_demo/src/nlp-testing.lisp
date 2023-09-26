@@ -62,12 +62,15 @@
     ;;reset queue
     (setf *plan-queue* nil)
     (format str "~% --- ~%"))
-  
   ;(setf (cpl:value *plan-details-fluent*) nil)
-  
   (sleep 3)) ;;give nlp time to process
 
 ;; use this by starting rasa, then do (start-stage-1 3 "33")
 ;,then run (run-test *sentance-list-stage-1*)
 (defun run-test (?sentance-list)
   (mapcar 'write-result ?sentance-list))
+
+
+;;navigation from room to room
+(defun nlp-navi()
+  (nlp-feedback "please go from the living room to the kitchen"))
